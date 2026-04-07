@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Location App</title>
+    <style>
+        /* CSS for Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #333333;
+            margin-top: 0;
+            font-size: 24px;
+        }
+
+        p {
+            color: #666666;
+            font-size: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            width: 100%;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        /* App Inventor Button Style */
+        .gps-btn {
+            background-color: #ff9800; /* Orange Color */
+        }
+
+        .gps-btn:hover {
+            background-color: #e68a00;
+        }
+
+        /* Get Location Button Style */
+        .location-btn {
+            background-color: #007bff; /* Blue Color */
+        }
+
+        .location-btn:hover {
+            background-color: #0056b3;
+        }
+
+        #result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+            display: none; /* Hidden initially */
+        }
+
+        .coords {
+            font-size: 18px;
+            color: #333;
+            margin: 10px 0;
+        }
+
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>📍 Find My Location</h1>
+        <p>Agar aapka GPS off hai, toh pehle enable karein, phir location get karein.</p>
+        
+        <!-- App Inventor Button -->
+        <button class="gps-btn" onclick="openLocationSettings()">
+            ⚙️ Enable GPS / Location
+        </button>
+
+        <!-- HTML Geolocation Button -->
+        <button class="location-btn" id="getLocationBtn">
+            🌍 Get Current Location
+        </button>
+
+        <div id="result">
+            <p id="status"></p>
+            <div class="coords" id="coordinates"></div>
+        </div>
+    </div>
+
+    <script>
+        // Function to send string to App Inventor
+        function openLocationSettings() {
+            if (window.AppInventor) {
+                window.AppInventor.setWebViewString('open_location');
+            } else {
+                alert("Yeh button sirf App Inventor/Kodular app ke andar kaam karega!");
+            }
+        }
+
+        // JavaScript for HTML Geolocation API
+        const btn = document.getElementById('getLocationBtn');
+        const statusText = document.getElementById('status');
+        const coordsText = document.getElementById('coordinates');
+        const resultDiv = document.getElementById('result');
+
+        btn.addEventListener('click', () => {
+            // Show the result div
+            resultDiv.style.display = 'block';
+            statusText.textContent = "Locating... Kripya wait karein.";
+            statusText.className = "";
+            coordsText.innerHTML = "";
+
+            // Check if browser/webview supports Geolocation
+            if ("geolocation" in navigator) {
+                // Request location
+                navigator.geolocation.getCurrentPosition(showPosition, showError, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            } else {
+                statusText.textContent = "Aapka device Geolocation support nahi karta hai.";
+                statusText.className = "error";
+            }
+        });
+
+        // Function to run on Success
+        function showPosition(position) {
+            statusText.textContent = "Location successfully mil gayi!";
+            statusText.className = "success";
+            
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            coordsText.innerHTML = `
+                <strong>Latitude:</strong> ${lat} <br> 
+                <strong>Longitude:</strong> ${lon}
+            `;
+        }
+
+        // Function to run on Error
+        function showError(error) {
+            statusText.className = "error";
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    statusText.textContent = "Aapne location permission deny kar di hai.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    statusText.textContent = "Location ki information available nahi hai (GPS check karein).";
+                    break;
+                case error.TIMEOUT:
+                    statusText.textContent = "Location request time out ho gayi.";
+                    break;
+                case error.UNKNOWN_ERROR:
+                    statusText.textContent = "Ek unknown error aayi hai.";
+                    break;
+            }
+        }
+    </script>
+
+</body>
+</html>
