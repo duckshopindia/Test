@@ -1,172 +1,330 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iSecureID Test - Updated</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-
-<style>
-button {
-    transition: all 0.2s ease;
-}
-button:active {
-    transform: scale(0.95);
-}
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iSecureID Test - Single Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    
+    <div class="bg-white p-8 rounded-lg shadow-md max-w-2xl w-full">
+        
+        <!-- Test Button -->
+        <div id="login-section">
+            <h1 class="text-2xl font-bold mb-4 text-indigo-600">🔐 Test iSecureID OAuth</h1>
+            
+            <!-- Web Login Test -->
+            <div class="mb-6 bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                    Web Application Test
+                </h2>
+                <button onclick="testWebLogin()" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition shadow-lg flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                    Login with iSecureID
+                </button>
+                <p class="text-xs text-gray-500 mt-2 font-mono break-all" id="web-test-url"></p>
+            </div>
 
-<body class="bg-gradient-to-br from-indigo-100 to-gray-200 min-h-screen flex items-center justify-center p-4">
+            <!-- Info Box -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 class="font-bold text-sm text-blue-900 mb-2 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    How It Works
+                </h3>
+                <ul class="text-xs text-blue-800 space-y-1">
+                    <li>✅ Click "Login with iSecureID" button</li>
+                    <li>✅ You'll be redirected to iSecureID for authentication</li>
+                    <li>✅ After login, you'll receive: token, username, auth_id, email</li>
+                    <li>✅ Data will be displayed below automatically</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Result Display -->
+        <div id="result-section" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-green-600 flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Login Successful!
+                </h2>
+                <button onclick="location.reload()" class="text-sm bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 transition">
+                    🔄 Test Again
+                </button>
+            </div>
 
-<div class="bg-white p-6 rounded-2xl shadow-xl max-w-2xl w-full">
+            <div class="space-y-3">
+                <!-- Username -->
+                <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-200">
+                    <label class="text-xs text-indigo-700 uppercase font-bold flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        Username
+                    </label>
+                    <p class="font-mono text-gray-900 font-semibold mt-1" id="res-username"></p>
+                </div>
 
-<!-- LOGIN -->
-<div id="login-section">
+                <!-- Auth ID -->
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
+                    <label class="text-xs text-purple-700 uppercase font-bold flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+                        Authentication ID
+                    </label>
+                    <p class="font-mono text-purple-900 font-bold text-2xl mt-1 tracking-widest" id="res-authid"></p>
+                </div>
 
-<h1 class="text-2xl font-bold mb-4 text-center">🔐 iSecureID OAuth Test</h1>
+                <!-- Email -->
+                <div class="bg-gradient-to-r from-green-50 to-teal-50 p-4 rounded-lg border border-green-200">
+                    <label class="text-xs text-green-700 uppercase font-bold flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        Email Address
+                    </label>
+                    <p class="font-mono text-gray-900 font-semibold mt-1" id="res-email"></p>
+                </div>
 
-<!-- Web Login -->
-<div class="mb-6">
-<h2 class="text-lg font-semibold mb-2">🌐 Web Login</h2>
+                <!-- Token -->
+                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg border border-yellow-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs text-yellow-800 uppercase font-bold flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                            Firebase ID Token
+                        </label>
+                        <button onclick="copyToken()" class="text-xs bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700 transition flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            Copy
+                        </button>
+                    </div>
+                    <textarea id="res-token" class="w-full h-32 font-mono text-xs bg-white p-3 rounded border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-500" readonly></textarea>
+                    <p class="text-xs text-yellow-700 mt-2">
+                        <strong>Token Length:</strong> <span id="token-length"></span> characters
+                    </p>
+                </div>
+            </div>
 
-<button onclick="testWebLogin()" 
-class="w-full border-2 border-indigo-600 text-indigo-600 font-bold py-3 rounded-lg hover:bg-indigo-600 hover:text-white">
-Login (Web)
-</button>
+            <!-- Integration Example -->
+            <div class="mt-6 bg-gray-900 rounded-lg p-4">
+                <h3 class="text-sm font-bold text-green-400 mb-2">💻 Integration Example (JavaScript)</h3>
+                <pre class="text-xs text-gray-300 overflow-x-auto"><code id="integration-code">// Redirect to iSecureID
+const authUrl = 'https://isecureid.netlify.app/?redirect_uri=' + 
+                encodeURIComponent(window.location.href);
+window.location.href = authUrl;
 
-<p id="web-test-url" class="text-xs mt-2 font-mono"></p>
-</div>
+// Parse response on callback
+const urlParams = new URLSearchParams(window.location.search);
+if(urlParams.get('token')) {
+    const userData = {
+        token: urlParams.get('token'),
+        username: urlParams.get('username'),
+        auth_id: urlParams.get('auth_id'),
+        email: urlParams.get('email')
+    };
+    console.log('User logged in:', userData);
+}</code></pre>
+            </div>
+        </div>
 
-<!-- Mobile Login -->
-<div class="border-t pt-6">
-<h2 class="text-lg font-semibold mb-2">📱 Mobile Login</h2>
+        <!-- Error Display -->
+        <div id="error-section" class="hidden">
+            <h2 class="text-xl font-bold mb-4 text-red-600 flex items-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Authentication Failed
+            </h2>
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p class="text-red-800 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <strong>Error:</strong> <span id="error-message"></span>
+                </p>
+            </div>
+            <button onclick="location.reload()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+                🔄 Try Again
+            </button>
+        </div>
+        
+        <!-- Console Logs -->
+        <div class="mt-6 bg-gray-900 rounded-lg shadow-inner overflow-hidden">
+            <div class="flex justify-between items-center p-3 bg-gray-800 border-b border-gray-700">
+                <h3 class="font-bold text-sm text-green-400 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Console Logs
+                </h3>
+                <button onclick="clearLogs()" class="text-xs text-gray-400 hover:text-white transition">
+                    🗑️ Clear
+                </button>
+            </div>
+            <div id="console-logs" class="text-xs font-mono space-y-1 max-h-64 overflow-auto p-3 bg-gray-900">
+                <!-- Logs will appear here -->
+            </div>
+        </div>
+        
+    </div>
+    
+    <script>
+        const log = (msg, type = 'info') => {
+            console.log(msg);
+            const logs = document.getElementById('console-logs');
+            const p = document.createElement('p');
+            
+            const timestamp = new Date().toLocaleTimeString();
+            
+            // Color coding based on type
+            const icons = {
+                'info': '📘',
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️',
+                'data': '📊'
+            };
+            
+            const colors = {
+                'info': 'text-blue-400',
+                'success': 'text-green-400',
+                'error': 'text-red-400',
+                'warning': 'text-yellow-400',
+                'data': 'text-purple-400'
+            };
+            
+            p.className = colors[type] || colors.info;
+            p.innerHTML = `<span class="text-gray-500">[${timestamp}]</span> ${icons[type]} ${msg}`;
+            logs.appendChild(p);
+            logs.scrollTop = logs.scrollHeight;
+        };
+        
+        function clearLogs() {
+            document.getElementById('console-logs').innerHTML = '';
+            log('Console cleared', 'info');
+        }
 
-<input type="text" id="package-name-input"
-value="com.duckshop.official"
-class="w-full px-3 py-2 border rounded mb-3">
+        function copyToken() {
+            const token = document.getElementById('res-token').value;
+            navigator.clipboard.writeText(token).then(() => {
+                log('Token copied to clipboard!', 'success');
+                
+                // Visual feedback
+                const btn = event.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = `
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Copied!
+                `;
+                btn.classList.add('bg-green-600');
+                btn.classList.remove('bg-yellow-600');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('bg-green-600');
+                    btn.classList.add('bg-yellow-600');
+                }, 2000);
+            });
+        }
+        
+        // Web Login Test
+        function testWebLogin() {
+            const currentUrl = window.location.href.split('?')[0];
+            const callback = encodeURIComponent(currentUrl);
+            const authUrl = `https://isecureid.netlify.app/?redirect_uri=${callback}`;
+            
+            document.getElementById('web-test-url').textContent = '🔗 Callback: ' + currentUrl;
+            log('🚀 Starting OAuth flow...', 'info');
+            log('📍 Callback URL: ' + currentUrl, 'data');
+            log('🔗 iSecureID URL: https://isecureid.netlify.app/', 'data');
+            log('⏳ Redirecting to authentication page...', 'warning');
+            
+            setTimeout(() => {
+                window.location.href = authUrl;
+            }, 1000);
+        }
+        
+        // Check for callback params
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            log('🔍 Initializing iSecureID test page...', 'info');
+            log('📡 Checking URL parameters...', 'info');
+            
+            if(urlParams.get('token')) {
+                log('✅ Authentication callback received!', 'success');
+                log('📦 Processing OAuth response...', 'info');
+                
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('result-section').classList.remove('hidden');
+                
+                const username = urlParams.get('username');
+                const authId = urlParams.get('auth_id');
+                const email = urlParams.get('email');
+                const token = urlParams.get('token');
+                
+                document.getElementById('res-username').textContent = username;
+                document.getElementById('res-authid').textContent = authId;
+                document.getElementById('res-email').textContent = email;
+                document.getElementById('res-token').value = token;
+                document.getElementById('token-length').textContent = token.length;
+                
+                log('👤 Username: ' + username, 'data');
+                log('🔑 Auth ID: ' + authId, 'data');
+                log('📧 Email: ' + email, 'data');
+                log('🎫 Token length: ' + token.length + ' characters', 'data');
+                log('✅ Authentication completed successfully!', 'success');
+                log('💡 You can now use this data in your application', 'info');
+                
+                // Clean URL (optional)
+                // window.history.replaceState({}, document.title, window.location.pathname);
+                
+            } else if(urlParams.get('error')) {
+                const errorMsg = urlParams.get('error');
+                log('❌ Authentication error occurred', 'error');
+                log('📛 Error details: ' + errorMsg, 'error');
+                
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('error-section').classList.remove('hidden');
+                document.getElementById('error-message').textContent = errorMsg;
+                
+                if(errorMsg === 'access_denied') {
+                    log('👤 User cancelled the authentication', 'warning');
+                }
+                
+            } else {
+                log('⏳ Ready to test iSecureID OAuth', 'success');
+                log('💡 Click "Login with iSecureID" to start', 'info');
+                log('📝 This will redirect you to authenticate', 'info');
+            }
+        });
 
-<button onclick="testMobileLogin()" 
-class="w-full border-2 border-green-600 text-green-600 font-bold py-3 rounded-lg hover:bg-green-600 hover:text-white">
-Login (Mobile)
-</button>
+        // Visual loading indicator
+        let dots = 0;
+        const loadingInterval = setInterval(() => {
+            const loginBtn = document.querySelector('#login-section button');
+            if(loginBtn && loginBtn.textContent.includes('Redirecting')) {
+                dots = (dots + 1) % 4;
+                loginBtn.textContent = 'Redirecting' + '.'.repeat(dots);
+            }
+        }, 500);
+    </script>
 
-<p id="mobile-test-url" class="text-xs mt-2 font-mono"></p>
-</div>
+    <style>
+        /* Custom scrollbar for logs */
+        #console-logs::-webkit-scrollbar {
+            width: 8px;
+        }
+        #console-logs::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        #console-logs::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        #console-logs::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
 
-</div>
+        /* Smooth transitions */
+        * {
+            transition: all 0.2s ease;
+        }
 
-<!-- RESULT -->
-<div id="result-section" class="hidden">
-
-<h2 class="text-xl font-bold text-green-600 mb-4">✅ Login Success</h2>
-
-<p><b>Username:</b> <span id="res-username"></span></p>
-<p><b>Auth ID:</b> <span id="res-authid"></span></p>
-<p><b>Email:</b> <span id="res-email"></span></p>
-
-<textarea id="res-token" class="w-full mt-3 p-2 border rounded h-28"></textarea>
-
-<button onclick="copyToken()" 
-class="mt-3 w-full border-2 border-indigo-600 text-indigo-600 py-2 rounded hover:bg-indigo-600 hover:text-white">
-Copy Token
-</button>
-
-<button onclick="location.reload()" 
-class="mt-2 w-full border py-2 rounded">
-Reset
-</button>
-
-</div>
-
-<!-- ERROR -->
-<div id="error-section" class="hidden">
-<h2 class="text-xl text-red-600 font-bold mb-2">❌ Failed</h2>
-<p id="error-message"></p>
-</div>
-
-<!-- LOG -->
-<div class="mt-6 bg-black text-green-400 p-3 rounded text-xs h-40 overflow-auto" id="console-logs"></div>
-
-</div>
-
-<script>
-
-const API_KEY = "isecure_5y4rk0e9b4kheykgb58j3";
-
-// LOG
-function log(msg){
-    const box = document.getElementById("console-logs");
-    box.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
-    box.scrollTop = box.scrollHeight;
-}
-
-// COPY TOKEN
-function copyToken(){
-    const token = document.getElementById("res-token").value;
-    navigator.clipboard.writeText(token);
-    alert("Copied!");
-}
-
-// WEB LOGIN
-function testWebLogin(){
-
-    const callback = encodeURIComponent(window.location.href.split("?")[0]);
-
-    const url = `https://isecureid.netlify.app/?redirect_uri=${callback}&api_key=${API_KEY}`;
-
-    document.getElementById("web-test-url").textContent = url;
-
-    log("Redirecting Web Login...");
-    setTimeout(()=> window.location.href = url, 500);
-}
-
-// MOBILE LOGIN
-function testMobileLogin(){
-
-    const packageName = document.getElementById("package-name-input").value;
-
-    const url = `https://isecureid.netlify.app/?package_name=${packageName}&api_key=${API_KEY}`;
-
-    document.getElementById("mobile-test-url").textContent = url;
-
-    log("Redirecting Mobile Login...");
-    setTimeout(()=> window.location.href = url, 500);
-}
-
-// HANDLE RESPONSE
-window.onload = () => {
-
-    const params = new URLSearchParams(window.location.search);
-
-    if(params.get("token")){
-
-        document.getElementById("login-section").style.display="none";
-        document.getElementById("result-section").style.display="block";
-
-        document.getElementById("res-username").textContent = params.get("username");
-        document.getElementById("res-authid").textContent = params.get("auth_id");
-        document.getElementById("res-email").textContent = params.get("email");
-        document.getElementById("res-token").value = params.get("token");
-
-        log("Login Success");
-
-    } else if(params.get("error")){
-
-        document.getElementById("login-section").style.display="none";
-        document.getElementById("error-section").style.display="block";
-
-        document.getElementById("error-message").textContent = params.get("error");
-
-        log("Error: " + params.get("error"));
-    } else {
-        log("Ready...");
-    }
-
-}
-
-</script>
-
+        /* Code block styling */
+        pre code {
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+        }
+    </style>
 </body>
 </html>
