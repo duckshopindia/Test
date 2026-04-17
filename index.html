@@ -8,89 +8,70 @@
 <style>
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #1e1e2f, #3a3a6a);
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    font-family: Arial;
+    background: linear-gradient(135deg,#141e30,#243b55);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    color:white;
 }
 
-/* Card */
 .container {
-    width: 320px;
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    width:320px;
+    background:rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.4);
+    text-align:center;
 }
 
-/* Inputs */
-input {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border-radius: 10px;
-    border: 2px solid transparent;
-    outline: none;
-    background: rgba(255,255,255,0.1);
-    color: white;
-    font-size: 16px;
-}
-
-/* Buttons */
 button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    border-radius: 10px;
-    border: 2px solid #00f0ff;
-    background: transparent;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    transition: 0.2s;
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border-radius:10px;
+    border:2px solid #00eaff;
+    background:transparent;
+    color:white;
+    cursor:pointer;
+    transition:.2s;
 }
 
 button:hover {
-    background: #00f0ff;
-    color: black;
+    background:#00eaff;
+    color:black;
 }
 
 button:active {
-    transform: scale(0.9);
+    transform:scale(0.9);
 }
 
 /* Calculator */
 .calculator {
-    display: none;
+    display:none;
 }
 
 .display {
-    width: 100%;
-    height: 60px;
-    background: black;
-    color: #00ffcc;
-    text-align: right;
-    padding: 10px;
-    font-size: 24px;
-    border-radius: 10px;
-    margin-bottom: 10px;
+    background:black;
+    color:#00ffcc;
+    padding:15px;
+    font-size:22px;
+    border-radius:10px;
+    text-align:right;
+    margin-bottom:10px;
 }
 
 .grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
 }
 
 .grid button {
-    height: 60px;
-    font-size: 18px;
+    height:55px;
 }
-
 </style>
 </head>
 
@@ -98,18 +79,16 @@ button:active {
 
 <div class="container">
 
-    <!-- LOGIN -->
-    <div id="login">
-        <h2>Login</h2>
-        <input type="text" id="username" placeholder="Enter username">
-        <button onclick="sendOTP()">Send OTP</button>
-
-        <input type="text" id="otpInput" placeholder="Enter OTP">
-        <button onclick="verifyOTP()">Verify</button>
+    <!-- LOGIN SCREEN -->
+    <div id="loginBox">
+        <h2>Secure Login</h2>
+        <p>Login via iSecureID</p>
+        <button onclick="login()">Login</button>
     </div>
 
     <!-- CALCULATOR -->
-    <div class="calculator" id="calc">
+    <div class="calculator" id="calcBox">
+        <h3 id="welcome"></h3>
         <div class="display" id="display">0</div>
 
         <div class="grid">
@@ -139,77 +118,69 @@ button:active {
 
 <script>
 
-// API
-const OTP_API = 'https://us-central1-iid-2026.cloudfunctions.net/sendOTP';
-const API_KEY = 'isk_5LoLDxWLkZcHHb6ImcEGRWpagO03JYhc';
+// LOGIN REDIRECT
+function login(){
+    const authURL = 'https://isecureid.42web.io/?redirect_uri=' 
+        + encodeURIComponent(window.location.href);
+    window.location.href = authURL;
+}
 
-let generatedOTP = null;
+// HANDLE CALLBACK
+function checkLogin(){
+    const params = new URLSearchParams(window.location.search);
 
-// Send OTP
-async function sendOTP() {
-    const username = document.getElementById("username").value;
+    if(params.get('token')){
+        const user = {
+            token: params.get('token'),
+            username: params.get('username'),
+            authId: params.get('auth_id'),
+            email: params.get('email')
+        };
 
-    const otp = Math.floor(100000 + Math.random() * 900000);
-    generatedOTP = otp;
+        console.log('✅ User logged in:', user);
 
-    const response = await fetch(OTP_API, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': API_KEY
-        },
-        body: JSON.stringify({
-            username: username,
-            senderID: 'ISECUREID',
-            fromName: 'Calculator App',
-            subject: 'OTP',
-            message: `Your OTP is ${otp}`,
-            otp: otp.toString()
-        })
-    });
+        // Save session
+        localStorage.setItem("user", JSON.stringify(user));
 
-    const result = await response.json();
-
-    if(result.success){
-        alert("OTP Sent!");
-        sessionStorage.setItem("otp", otp);
+        showCalculator(user);
     } else {
-        alert("Error sending OTP");
+        // check if already logged in
+        const savedUser = localStorage.getItem("user");
+        if(savedUser){
+            showCalculator(JSON.parse(savedUser));
+        }
     }
 }
 
-// Verify OTP
-function verifyOTP() {
-    const entered = document.getElementById("otpInput").value;
-    const stored = sessionStorage.getItem("otp");
-
-    if(entered === stored){
-        document.getElementById("login").style.display = "none";
-        document.getElementById("calc").style.display = "block";
-    } else {
-        alert("Wrong OTP");
-    }
+// SHOW CALCULATOR
+function showCalculator(user){
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("calcBox").style.display="block";
+    document.getElementById("welcome").innerText = "Hi, " + user.username;
 }
 
-// Calculator Logic
+// CALCULATOR LOGIC
 let display = document.getElementById("display");
 
 function press(val){
-    if(display.innerText === "0") display.innerText = val;
-    else display.innerText += val;
+    if(display.innerText==="0") display.innerText=val;
+    else display.innerText+=val;
 }
 
 function clearDisplay(){
-    display.innerText = "0";
+    display.innerText="0";
 }
 
 function calculate(){
     try{
         display.innerText = eval(display.innerText);
     } catch {
-        display.innerText = "Error";
+        display.innerText="Error";
     }
 }
+
+// INIT
+checkLogin();
 
 </script>
 
