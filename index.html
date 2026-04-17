@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Secure Calculator</title>
+<title>APK Login Calculator</title>
 
 <style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: linear-gradient(135deg,#141e30,#243b55);
+body{
+    margin:0;
+    font-family:Arial;
+    background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
     display:flex;
     justify-content:center;
     align-items:center;
@@ -17,17 +17,27 @@ body {
     color:white;
 }
 
-.container {
+.container{
     width:320px;
-    background:rgba(255,255,255,0.05);
-    backdrop-filter: blur(12px);
     padding:20px;
     border-radius:20px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.4);
-    text-align:center;
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(10px);
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
 }
 
-button {
+input{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border-radius:10px;
+    border:none;
+    outline:none;
+    background:rgba(255,255,255,0.1);
+    color:white;
+}
+
+button{
     width:100%;
     padding:12px;
     margin-top:10px;
@@ -39,21 +49,21 @@ button {
     transition:.2s;
 }
 
-button:hover {
+button:hover{
     background:#00eaff;
     color:black;
 }
 
-button:active {
+button:active{
     transform:scale(0.9);
 }
 
 /* Calculator */
-.calculator {
+.calculator{
     display:none;
 }
 
-.display {
+.display{
     background:black;
     color:#00ffcc;
     padding:15px;
@@ -63,13 +73,13 @@ button:active {
     margin-bottom:10px;
 }
 
-.grid {
+.grid{
     display:grid;
     grid-template-columns:repeat(4,1fr);
     gap:10px;
 }
 
-.grid button {
+.grid button{
     height:55px;
 }
 </style>
@@ -79,16 +89,18 @@ button:active {
 
 <div class="container">
 
-    <!-- LOGIN SCREEN -->
+    <!-- LOGIN -->
     <div id="loginBox">
-        <h2>Secure Login</h2>
-        <p>Login via iSecureID</p>
-        <button onclick="login()">Login</button>
+        <h2>APK Login</h2>
+        <button id="login-btn">Login via Browser</button>
+
+        <input type="text" id="code-input" placeholder="Enter Code">
+        <button id="verify-code-btn">Verify Code</button>
     </div>
 
     <!-- CALCULATOR -->
     <div class="calculator" id="calcBox">
-        <h3 id="welcome"></h3>
+        <h3>Welcome User</h3>
         <div class="display" id="display">0</div>
 
         <div class="grid">
@@ -118,48 +130,48 @@ button:active {
 
 <script>
 
-// LOGIN REDIRECT
-function login(){
-    const authURL = 'https://isecureid.42web.io/?redirect_uri=' 
-        + encodeURIComponent(window.location.href);
-    window.location.href = authURL;
-}
+// LOGIN BUTTON
+document.getElementById('login-btn').addEventListener('click', () => {
 
-// HANDLE CALLBACK
-function checkLogin(){
-    const params = new URLSearchParams(window.location.search);
+    const tempCode = Math.floor(1000 + Math.random() * 9000);
 
-    if(params.get('token')){
-        const user = {
-            token: params.get('token'),
-            username: params.get('username'),
-            authId: params.get('auth_id'),
-            email: params.get('email')
+    localStorage.setItem('auth_code', tempCode);
+
+    // Simulate external browser open
+    const authURL = 'https://isecureid.42web.io/?apk_code=' + tempCode
+        + '&redirect_uri=' + encodeURIComponent('yourapp://callback');
+
+    window.open(authURL, '_blank');
+
+    alert("Code generated: " + tempCode + " (Demo ke liye show ho raha hai)");
+});
+
+// VERIFY CODE
+document.getElementById('verify-code-btn').addEventListener('click', () => {
+
+    const userCode = document.getElementById('code-input').value;
+    const storedCode = localStorage.getItem('auth_code');
+
+    if(userCode === storedCode){
+
+        // Fake callback data (simulation)
+        const userData = {
+            username: "DemoUser",
+            authId: "APK12345",
+            token: "secure_token"
         };
 
-        console.log('✅ User logged in:', user);
+        console.log('✅ APK authenticated:', userData);
 
-        // Save session
-        localStorage.setItem("user", JSON.stringify(user));
+        document.getElementById("loginBox").style.display="none";
+        document.getElementById("calcBox").style.display="block";
 
-        showCalculator(user);
     } else {
-        // check if already logged in
-        const savedUser = localStorage.getItem("user");
-        if(savedUser){
-            showCalculator(JSON.parse(savedUser));
-        }
+        alert('❌ Invalid code');
     }
-}
+});
 
-// SHOW CALCULATOR
-function showCalculator(user){
-    document.getElementById("loginBox").style.display="none";
-    document.getElementById("calcBox").style.display="block";
-    document.getElementById("welcome").innerText = "Hi, " + user.username;
-}
-
-// CALCULATOR LOGIC
+// CALCULATOR
 let display = document.getElementById("display");
 
 function press(val){
@@ -174,13 +186,10 @@ function clearDisplay(){
 function calculate(){
     try{
         display.innerText = eval(display.innerText);
-    } catch {
+    }catch{
         display.innerText="Error";
     }
 }
-
-// INIT
-checkLogin();
 
 </script>
 
