@@ -3,49 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Location App</title>
-    <style>
-        /* Styling wahi rakhi hai jo pehle thi */
-        body { font-family: sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
-        button { width: 100%; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; font-weight: bold; }
-        .gps-btn { background-color: #ff9800; }
-        .location-btn { background-color: #007bff; }
-    </style>
+    <title>iSecureID Test - Single Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-
-    <div class="container">
-        <h1>📍 Find My Location</h1>
-        <p>GPS ON karne ke liye niche button dabayein.</p>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    
+    <div class="bg-white p-8 rounded-lg shadow-md max-w-2xl w-full">
         
-        <button class="gps-btn" onclick="triggerLocationSettings()">
-            ⚙️ Enable GPS / Location
-        </button>
-
-        <button class="location-btn" id="getLocationBtn">
-            🌍 Get Current Location
-        </button>
+        <!-- Test Button -->
+        <div id="login-section">
+            <h1 class="text-2xl font-bold mb-4">Test iSecureID</h1>
+            <button onclick="testLogin()" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded hover:bg-indigo-700">
+                🔐 Login with iSecureID
+            </button>
+            <p class="text-xs text-gray-500 mt-2 font-mono" id="test-url"></p>
+        </div>
+        
+        <!-- Result Display -->
+        <div id="result-section" class="hidden">
+            <h2 class="text-xl font-bold mb-4 text-green-600">✅ Login Successful!</h2>
+            <div class="space-y-2 text-sm">
+                <div><strong>Username:</strong> <span id="res-username"></span></div>
+                <div><strong>Auth ID:</strong> <span id="res-authid"></span></div>
+                <div><strong>Email:</strong> <span id="res-email"></span></div>
+                <div><strong>Token:</strong> <textarea id="res-token" class="w-full h-32 font-mono text-xs bg-gray-50 p-2 rounded border mt-1"></textarea></div>
+            </div>
+            <button onclick="location.reload()" class="mt-4 bg-gray-200 px-4 py-2 rounded">Test Again</button>
+        </div>
+        
+        <!-- Console Logs -->
+        <div class="mt-6 bg-gray-50 p-4 rounded border">
+            <h3 class="font-bold text-sm mb-2">Console Logs:</h3>
+            <div id="console-logs" class="text-xs font-mono space-y-1 max-h-40 overflow-auto"></div>
+        </div>
+        
     </div>
-
+    
     <script>
-        function triggerLocationSettings() {
-            // Hum direct window.AppInventor use karne se pehle check kar rahe hain
-            try {
-                if (window.AppInventor && window.AppInventor.setWebViewString) {
-                    // Pehle string khali karte hain phir bhejte hain taaki har baar trigger ho
-                    window.AppInventor.setWebViewString(''); 
-                    window.AppInventor.setWebViewString('open_location');
-                } else {
-                    console.log("Kodular Interface nahi mila.");
-                    alert("App ke andar hi try karein.");
-                }
-            } catch (e) {
-                alert("Error: " + e.message);
-            }
+        const log = (msg) => {
+            console.log(msg);
+            const logs = document.getElementById('console-logs');
+            const p = document.createElement('p');
+            p.className = 'text-gray-700';
+            p.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+            logs.appendChild(p);
+            logs.scrollTop = logs.scrollHeight;
+        };
+        
+        function testLogin() {
+            const currentUrl = window.location.href.split('?')[0];
+            const callback = encodeURIComponent(currentUrl);
+            const authUrl = `https://isecureid.netlify.app/?redirect_uri=${callback}`;
+            
+            document.getElementById('test-url').textContent = 'Callback URL: ' + currentUrl;
+            log('🚀 Redirecting to iSecureID...');
+            log('Callback URL: ' + currentUrl);
+            
+            window.location.href = authUrl;
         }
-
-        // Baki geolocation code wahi rahega...
+        
+        // Check for callback params
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if(urlParams.get('token')) {
+            log('✅ Callback received with token');
+            
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+            
+            document.getElementById('res-username').textContent = urlParams.get('username');
+            document.getElementById('res-authid').textContent = urlParams.get('auth_id');
+            document.getElementById('res-email').textContent = urlParams.get('email');
+            document.getElementById('res-token').value = urlParams.get('token');
+            
+            log('Username: ' + urlParams.get('username'));
+            log('Auth ID: ' + urlParams.get('auth_id'));
+            log('Email: ' + urlParams.get('email'));
+            log('Token length: ' + urlParams.get('token').length);
+        } else if(urlParams.get('error')) {
+            log('❌ Error: ' + urlParams.get('error'));
+        } else {
+            log('⏳ Ready to test');
+        }
     </script>
 </body>
 </html>
