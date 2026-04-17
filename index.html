@@ -1,81 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Opening App...</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iSecureID Test - Updated</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+button {
+    transition: all 0.2s ease;
+}
+button:active {
+    transform: scale(0.95);
+}
+</style>
+
 </head>
-<body class="bg-indigo-600 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full text-center">
-        <div class="mb-6">
-            <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-            </div>
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">Authentication Successful!</h1>
-            <p class="text-gray-600 mb-6">Click the button below to open your app</p>
-        </div>
 
-        <button id="openAppBtn" class="w-full bg-indigo-600 text-white font-bold py-4 px-6 rounded-lg hover:bg-indigo-700 transition shadow-lg mb-4">
-            📱 Open App
-        </button>
+<body class="bg-gradient-to-br from-indigo-100 to-gray-200 min-h-screen flex items-center justify-center p-4">
 
-        <div class="bg-gray-50 rounded-lg p-4 mb-4">
-            <p class="text-xs text-gray-600 mb-2"><strong>App not opening?</strong></p>
-            <button id="copyDataBtn" class="text-xs bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">
-                Copy Authentication Data
-            </button>
-        </div>
+<div class="bg-white p-6 rounded-2xl shadow-xl max-w-2xl w-full">
 
-        <p class="text-xs text-gray-400">
-            You can close this page after opening the app
-        </p>
-    </div>
+<!-- LOGIN -->
+<div id="login-section">
 
-    <script>
-        // Get params from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const packageName = urlParams.get('package_name');
-        const token = urlParams.get('token');
-        const username = urlParams.get('username');
-        const authId = urlParams.get('auth_id');
-        const email = urlParams.get('email');
+<h1 class="text-2xl font-bold mb-4 text-center">🔐 iSecureID OAuth Test</h1>
 
-        const deepLinkUrl = `${packageName}://auth?token=${encodeURIComponent(token)}&username=${encodeURIComponent(username)}&auth_id=${encodeURIComponent(authId)}&email=${encodeURIComponent(email)}`;
+<!-- Web Login -->
+<div class="mb-6">
+<h2 class="text-lg font-semibold mb-2">🌐 Web Login</h2>
 
-        // Open app on button click
-        document.getElementById('openAppBtn').addEventListener('click', () => {
-            window.location.href = deepLinkUrl;
-            
-            // Show success message
-            setTimeout(() => {
-                document.getElementById('openAppBtn').innerHTML = '✅ App Opening...';
-                document.getElementById('openAppBtn').disabled = true;
-            }, 100);
-        });
+<button onclick="testWebLogin()" 
+class="w-full border-2 border-indigo-600 text-indigo-600 font-bold py-3 rounded-lg hover:bg-indigo-600 hover:text-white">
+Login (Web)
+</button>
 
-        // Copy data fallback
-        document.getElementById('copyDataBtn').addEventListener('click', () => {
-            const authData = {
-                token: token,
-                username: username,
-                auth_id: authId,
-                email: email
-            };
-            
-            navigator.clipboard.writeText(JSON.stringify(authData, null, 2)).then(() => {
-                alert('✅ Authentication data copied!\n\nOpen your app and paste the data manually.');
-            });
-        });
+<p id="web-test-url" class="text-xs mt-2 font-mono"></p>
+</div>
 
-        // Auto-attempt after 2 seconds (optional)
-        setTimeout(() => {
-            console.log('Auto-attempting to open app...');
-            // Uncomment below line if you want auto-attempt
-            // window.location.href = deepLinkUrl;
-        }, 2000);
-    </script>
+<!-- Mobile Login -->
+<div class="border-t pt-6">
+<h2 class="text-lg font-semibold mb-2">📱 Mobile Login</h2>
+
+<input type="text" id="package-name-input"
+value="com.duckshop.official"
+class="w-full px-3 py-2 border rounded mb-3">
+
+<button onclick="testMobileLogin()" 
+class="w-full border-2 border-green-600 text-green-600 font-bold py-3 rounded-lg hover:bg-green-600 hover:text-white">
+Login (Mobile)
+</button>
+
+<p id="mobile-test-url" class="text-xs mt-2 font-mono"></p>
+</div>
+
+</div>
+
+<!-- RESULT -->
+<div id="result-section" class="hidden">
+
+<h2 class="text-xl font-bold text-green-600 mb-4">✅ Login Success</h2>
+
+<p><b>Username:</b> <span id="res-username"></span></p>
+<p><b>Auth ID:</b> <span id="res-authid"></span></p>
+<p><b>Email:</b> <span id="res-email"></span></p>
+
+<textarea id="res-token" class="w-full mt-3 p-2 border rounded h-28"></textarea>
+
+<button onclick="copyToken()" 
+class="mt-3 w-full border-2 border-indigo-600 text-indigo-600 py-2 rounded hover:bg-indigo-600 hover:text-white">
+Copy Token
+</button>
+
+<button onclick="location.reload()" 
+class="mt-2 w-full border py-2 rounded">
+Reset
+</button>
+
+</div>
+
+<!-- ERROR -->
+<div id="error-section" class="hidden">
+<h2 class="text-xl text-red-600 font-bold mb-2">❌ Failed</h2>
+<p id="error-message"></p>
+</div>
+
+<!-- LOG -->
+<div class="mt-6 bg-black text-green-400 p-3 rounded text-xs h-40 overflow-auto" id="console-logs"></div>
+
+</div>
+
+<script>
+
+const API_KEY = "isecure_5y4rk0e9b4kheykgb58j3";
+
+// LOG
+function log(msg){
+    const box = document.getElementById("console-logs");
+    box.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+    box.scrollTop = box.scrollHeight;
+}
+
+// COPY TOKEN
+function copyToken(){
+    const token = document.getElementById("res-token").value;
+    navigator.clipboard.writeText(token);
+    alert("Copied!");
+}
+
+// WEB LOGIN
+function testWebLogin(){
+
+    const callback = encodeURIComponent(window.location.href.split("?")[0]);
+
+    const url = `https://isecureid.netlify.app/?redirect_uri=${callback}&api_key=${API_KEY}`;
+
+    document.getElementById("web-test-url").textContent = url;
+
+    log("Redirecting Web Login...");
+    setTimeout(()=> window.location.href = url, 500);
+}
+
+// MOBILE LOGIN
+function testMobileLogin(){
+
+    const packageName = document.getElementById("package-name-input").value;
+
+    const url = `https://isecureid.netlify.app/?package_name=${packageName}&api_key=${API_KEY}`;
+
+    document.getElementById("mobile-test-url").textContent = url;
+
+    log("Redirecting Mobile Login...");
+    setTimeout(()=> window.location.href = url, 500);
+}
+
+// HANDLE RESPONSE
+window.onload = () => {
+
+    const params = new URLSearchParams(window.location.search);
+
+    if(params.get("token")){
+
+        document.getElementById("login-section").style.display="none";
+        document.getElementById("result-section").style.display="block";
+
+        document.getElementById("res-username").textContent = params.get("username");
+        document.getElementById("res-authid").textContent = params.get("auth_id");
+        document.getElementById("res-email").textContent = params.get("email");
+        document.getElementById("res-token").value = params.get("token");
+
+        log("Login Success");
+
+    } else if(params.get("error")){
+
+        document.getElementById("login-section").style.display="none";
+        document.getElementById("error-section").style.display="block";
+
+        document.getElementById("error-message").textContent = params.get("error");
+
+        log("Error: " + params.get("error"));
+    } else {
+        log("Ready...");
+    }
+
+}
+
+</script>
+
 </body>
 </html>
