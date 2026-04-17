@@ -12,79 +12,235 @@
         
         <!-- Test Button -->
         <div id="login-section">
-            <h1 class="text-2xl font-bold mb-4">Test iSecureID</h1>
-            <button onclick="testLogin()" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded hover:bg-indigo-700">
-                🔐 Login with iSecureID
-            </button>
-            <p class="text-xs text-gray-500 mt-2 font-mono" id="test-url"></p>
+            <h1 class="text-2xl font-bold mb-4">Test iSecureID OAuth</h1>
+            
+            <!-- Web Login Test -->
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-2 text-gray-700">🌐 Web Application Test</h2>
+                <button onclick="testWebLogin()" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded hover:bg-indigo-700 transition">
+                    🔐 Login with iSecureID (Web)
+                </button>
+                <p class="text-xs text-gray-500 mt-2 font-mono" id="web-test-url"></p>
+            </div>
+
+            <!-- Mobile App Test -->
+            <div class="border-t pt-6">
+                <h2 class="text-lg font-semibold mb-2 text-gray-700">📱 Mobile Application Test</h2>
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Package Name:</label>
+                    <input 
+                        type="text" 
+                        id="package-name-input" 
+                        value="com.example.testapp"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="com.example.app"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">Enter your app's package name (e.g., com.yourapp.name)</p>
+                </div>
+                <button onclick="testMobileLogin()" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded hover:bg-green-700 transition">
+                    📱 Login with iSecureID (Mobile App)
+                </button>
+                <p class="text-xs text-gray-500 mt-2 font-mono" id="mobile-test-url"></p>
+            </div>
+
+            <!-- Info Box -->
+            <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 class="font-bold text-sm text-blue-900 mb-2">ℹ️ How It Works:</h3>
+                <ul class="text-xs text-blue-800 space-y-1">
+                    <li><strong>Web:</strong> Uses <code class="bg-blue-100 px-1 rounded">redirect_uri</code> parameter</li>
+                    <li><strong>Mobile:</strong> Uses <code class="bg-blue-100 px-1 rounded">package_name</code> parameter</li>
+                    <li><strong>Response:</strong> Returns token, username, auth_id, and email</li>
+                </ul>
+            </div>
         </div>
         
         <!-- Result Display -->
         <div id="result-section" class="hidden">
             <h2 class="text-xl font-bold mb-4 text-green-600">✅ Login Successful!</h2>
-            <div class="space-y-2 text-sm">
-                <div><strong>Username:</strong> <span id="res-username"></span></div>
-                <div><strong>Auth ID:</strong> <span id="res-authid"></span></div>
-                <div><strong>Email:</strong> <span id="res-email"></span></div>
-                <div><strong>Token:</strong> <textarea id="res-token" class="w-full h-32 font-mono text-xs bg-gray-50 p-2 rounded border mt-1"></textarea></div>
+            <div class="space-y-3">
+                <div class="bg-gray-50 p-3 rounded border">
+                    <strong class="text-sm text-gray-600">Username:</strong> 
+                    <p class="font-mono text-gray-900" id="res-username"></p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded border">
+                    <strong class="text-sm text-gray-600">Auth ID:</strong> 
+                    <p class="font-mono text-indigo-700 font-bold text-lg" id="res-authid"></p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded border">
+                    <strong class="text-sm text-gray-600">Email:</strong> 
+                    <p class="font-mono text-gray-900" id="res-email"></p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded border">
+                    <strong class="text-sm text-gray-600">ID Token:</strong>
+                    <textarea id="res-token" class="w-full h-32 font-mono text-xs bg-white p-2 rounded border mt-2" readonly></textarea>
+                    <button onclick="copyToken()" class="mt-2 text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700">
+                        📋 Copy Token
+                    </button>
+                </div>
             </div>
-            <button onclick="location.reload()" class="mt-4 bg-gray-200 px-4 py-2 rounded">Test Again</button>
+            <button onclick="location.reload()" class="mt-4 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition w-full">
+                🔄 Test Again
+            </button>
+        </div>
+
+        <!-- Error Display -->
+        <div id="error-section" class="hidden">
+            <h2 class="text-xl font-bold mb-4 text-red-600">❌ Authentication Failed</h2>
+            <div class="bg-red-50 border border-red-200 rounded p-4 mb-4">
+                <p class="text-red-800"><strong>Error:</strong> <span id="error-message"></span></p>
+            </div>
+            <button onclick="location.reload()" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition">
+                Try Again
+            </button>
         </div>
         
         <!-- Console Logs -->
-        <div class="mt-6 bg-gray-50 p-4 rounded border">
-            <h3 class="font-bold text-sm mb-2">Console Logs:</h3>
-            <div id="console-logs" class="text-xs font-mono space-y-1 max-h-40 overflow-auto"></div>
+        <div class="mt-6 bg-gray-900 p-4 rounded-lg shadow-inner">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="font-bold text-sm text-green-400">📊 Console Logs:</h3>
+                <button onclick="clearLogs()" class="text-xs text-gray-400 hover:text-white">Clear</button>
+            </div>
+            <div id="console-logs" class="text-xs font-mono space-y-1 max-h-48 overflow-auto">
+                <!-- Logs will appear here -->
+            </div>
         </div>
         
     </div>
     
     <script>
-        const log = (msg) => {
+        const log = (msg, type = 'info') => {
             console.log(msg);
             const logs = document.getElementById('console-logs');
             const p = document.createElement('p');
-            p.className = 'text-gray-700';
-            p.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            
+            // Color coding based on type
+            const colors = {
+                'info': 'text-gray-300',
+                'success': 'text-green-400',
+                'error': 'text-red-400',
+                'warning': 'text-yellow-400',
+                'data': 'text-blue-400'
+            };
+            
+            p.className = colors[type] || colors.info;
+            p.textContent = `[${timestamp}] ${msg}`;
             logs.appendChild(p);
             logs.scrollTop = logs.scrollHeight;
         };
         
-        function testLogin() {
+        function clearLogs() {
+            document.getElementById('console-logs').innerHTML = '';
+            log('Logs cleared', 'info');
+        }
+
+        function copyToken() {
+            const token = document.getElementById('res-token').value;
+            navigator.clipboard.writeText(token).then(() => {
+                log('✅ Token copied to clipboard!', 'success');
+                alert('Token copied to clipboard!');
+            });
+        }
+        
+        // Web Login Test
+        function testWebLogin() {
             const currentUrl = window.location.href.split('?')[0];
             const callback = encodeURIComponent(currentUrl);
             const authUrl = `https://isecureid.netlify.app/?redirect_uri=${callback}`;
             
-            document.getElementById('test-url').textContent = 'Callback URL: ' + currentUrl;
-            log('🚀 Redirecting to iSecureID...');
-            log('Callback URL: ' + currentUrl);
+            document.getElementById('web-test-url').textContent = 'Callback URL: ' + currentUrl;
+            log('🚀 Starting Web Authentication...', 'info');
+            log('📍 Callback URL: ' + currentUrl, 'data');
+            log('🔗 Auth URL: ' + authUrl, 'data');
+            log('⏳ Redirecting to iSecureID...', 'warning');
             
-            window.location.href = authUrl;
+            setTimeout(() => {
+                window.location.href = authUrl;
+            }, 500);
+        }
+
+        // Mobile App Login Test
+        function testMobileLogin() {
+            const packageName = document.getElementById('package-name-input').value.trim();
+            
+            if(!packageName) {
+                alert('⚠️ Please enter a package name!');
+                log('❌ Package name is empty!', 'error');
+                return;
+            }
+
+            // Validate package name format
+            const packageRegex = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/;
+            if(!packageRegex.test(packageName)) {
+                alert('⚠️ Invalid package name format!\nExample: com.example.app');
+                log('❌ Invalid package name format: ' + packageName, 'error');
+                return;
+            }
+            
+            const authUrl = `https://isecureid.netlify.app/?package_name=${encodeURIComponent(packageName)}`;
+            
+            document.getElementById('mobile-test-url').textContent = 'Package: ' + packageName;
+            log('🚀 Starting Mobile App Authentication...', 'info');
+            log('📱 Package Name: ' + packageName, 'data');
+            log('🔗 Auth URL: ' + authUrl, 'data');
+            log('⏳ Redirecting to iSecureID...', 'warning');
+            log('💡 Note: Deep link will try to open your app', 'info');
+            
+            setTimeout(() => {
+                window.location.href = authUrl;
+            }, 500);
         }
         
         // Check for callback params
-        const urlParams = new URLSearchParams(window.location.search);
-        
-        if(urlParams.get('token')) {
-            log('✅ Callback received with token');
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
             
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('result-section').classList.remove('hidden');
+            log('🔍 Checking URL parameters...', 'info');
             
-            document.getElementById('res-username').textContent = urlParams.get('username');
-            document.getElementById('res-authid').textContent = urlParams.get('auth_id');
-            document.getElementById('res-email').textContent = urlParams.get('email');
-            document.getElementById('res-token').value = urlParams.get('token');
-            
-            log('Username: ' + urlParams.get('username'));
-            log('Auth ID: ' + urlParams.get('auth_id'));
-            log('Email: ' + urlParams.get('email'));
-            log('Token length: ' + urlParams.get('token').length);
-        } else if(urlParams.get('error')) {
-            log('❌ Error: ' + urlParams.get('error'));
-        } else {
-            log('⏳ Ready to test');
-        }
+            if(urlParams.get('token')) {
+                log('✅ Authentication callback received!', 'success');
+                log('📦 Processing response data...', 'info');
+                
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('result-section').classList.remove('hidden');
+                
+                const username = urlParams.get('username');
+                const authId = urlParams.get('auth_id');
+                const email = urlParams.get('email');
+                const token = urlParams.get('token');
+                
+                document.getElementById('res-username').textContent = username;
+                document.getElementById('res-authid').textContent = authId;
+                document.getElementById('res-email').textContent = email;
+                document.getElementById('res-token').value = token;
+                
+                log('👤 Username: ' + username, 'data');
+                log('🔑 Auth ID: ' + authId, 'data');
+                log('📧 Email: ' + email, 'data');
+                log('🎫 Token length: ' + token.length + ' characters', 'data');
+                log('✅ Authentication successful!', 'success');
+                
+            } else if(urlParams.get('error')) {
+                const errorMsg = urlParams.get('error');
+                log('❌ Authentication error: ' + errorMsg, 'error');
+                
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('error-section').classList.remove('hidden');
+                document.getElementById('error-message').textContent = errorMsg;
+                
+            } else {
+                log('⏳ Ready to test authentication', 'success');
+                log('💡 Choose Web or Mobile app test', 'info');
+            }
+        });
+
+        // Handle mobile deep link response (if opened in browser instead of app)
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                log('🔄 Page restored from cache', 'warning');
+            }
+        });
     </script>
 </body>
 </html>
