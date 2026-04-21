@@ -1,197 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APK Login Calculator</title>
-
-<style>
-body{
-    margin:0;
-    font-family:Arial;
-    background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
-    color:white;
-}
-
-.container{
-    width:320px;
-    padding:20px;
-    border-radius:20px;
-    background:rgba(255,255,255,0.05);
-    backdrop-filter:blur(10px);
-    box-shadow:0 10px 30px rgba(0,0,0,0.5);
-}
-
-input{
-    width:100%;
-    padding:12px;
-    margin-top:10px;
-    border-radius:10px;
-    border:none;
-    outline:none;
-    background:rgba(255,255,255,0.1);
-    color:white;
-}
-
-button{
-    width:100%;
-    padding:12px;
-    margin-top:10px;
-    border-radius:10px;
-    border:2px solid #00eaff;
-    background:transparent;
-    color:white;
-    cursor:pointer;
-    transition:.2s;
-}
-
-button:hover{
-    background:#00eaff;
-    color:black;
-}
-
-button:active{
-    transform:scale(0.9);
-}
-
-/* Calculator */
-.calculator{
-    display:none;
-}
-
-.display{
-    background:black;
-    color:#00ffcc;
-    padding:15px;
-    font-size:22px;
-    border-radius:10px;
-    text-align:right;
-    margin-bottom:10px;
-}
-
-.grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:10px;
-}
-
-.grid button{
-    height:55px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Clone Test</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #ece5dd; }
+        .hidden { display: none; }
+        /* Login Screen */
+        #login-page { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #075e54; color: white; }
+        input { padding: 12px; border-radius: 5px; border: none; margin: 10px; width: 80%; }
+        button { padding: 12px 30px; background: #25d366; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        /* Dashboard */
+        #dashboard { background: white; height: 100vh; }
+        .header { background: #075e54; color: white; padding: 15px; font-size: 20px; }
+        .user-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; display: block; }
+        .user-item:hover { background: #f5f5f5; }
+        /* Chat Room */
+        #chat-room { display: flex; flex-direction: column; height: 100vh; }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; }
+        .msg { padding: 8px 12px; margin: 5px; border-radius: 8px; max-width: 70%; }
+        .sent { background: #dcf8c6; align-self: flex-end; }
+        .received { background: white; align-self: flex-start; }
+        .input-area { padding: 10px; background: #f0f0f0; display: flex; }
+    </style>
 </head>
-
 <body>
 
-<div class="container">
-
-    <!-- LOGIN -->
-    <div id="loginBox">
-        <h2>APK Login</h2>
-        <button id="login-btn">Login via Browser</button>
-
-        <input type="text" id="code-input" placeholder="Enter Code">
-        <button id="verify-code-btn">Verify Code</button>
+    <div id="login-page">
+        <h1>WhatsApp Test</h1>
+        <input type="text" id="username" placeholder="Apna Naam Likhein...">
+        <button onclick="login()">Continue</button>
     </div>
 
-    <!-- CALCULATOR -->
-    <div class="calculator" id="calcBox">
-        <h3>Welcome User</h3>
-        <div class="display" id="display">0</div>
-
-        <div class="grid">
-            <button onclick="press('7')">7</button>
-            <button onclick="press('8')">8</button>
-            <button onclick="press('9')">9</button>
-            <button onclick="press('/')">/</button>
-
-            <button onclick="press('4')">4</button>
-            <button onclick="press('5')">5</button>
-            <button onclick="press('6')">6</button>
-            <button onclick="press('*')">*</button>
-
-            <button onclick="press('1')">1</button>
-            <button onclick="press('2')">2</button>
-            <button onclick="press('3')">3</button>
-            <button onclick="press('-')">-</button>
-
-            <button onclick="press('0')">0</button>
-            <button onclick="clearDisplay()">C</button>
-            <button onclick="calculate()">=</button>
-            <button onclick="press('+')">+</button>
+    <div id="dashboard" class="hidden">
+        <div class="header">Chats</div>
+        <div id="user-list">
+            <p style="padding: 20px;">Users load ho rahe hain...</p>
         </div>
     </div>
 
-</div>
+    <div id="chat-room" class="hidden">
+        <div class="header">
+            <span onclick="showDashboard()" style="cursor:pointer;">←</span> 
+            <span id="chatting-with">Username</span>
+        </div>
+        <div id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="msgInput" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
 
-<script>
-
-// LOGIN BUTTON
-document.getElementById('login-btn').addEventListener('click', () => {
-
-    const tempCode = Math.floor(1000 + Math.random() * 9000);
-
-    localStorage.setItem('auth_code', tempCode);
-
-    // Simulate external browser open
-    const authURL = 'https://isecureid.42web.io/?apk_code=' + tempCode
-        + '&redirect_uri=' + encodeURIComponent('yourapp://callback');
-
-    window.open(authURL, '_blank');
-
-    alert("Code generated: " + tempCode + " (Demo ke liye show ho raha hai)");
-});
-
-// VERIFY CODE
-document.getElementById('verify-code-btn').addEventListener('click', () => {
-
-    const userCode = document.getElementById('code-input').value;
-    const storedCode = localStorage.getItem('auth_code');
-
-    if(userCode === storedCode){
-
-        // Fake callback data (simulation)
-        const userData = {
-            username: "DemoUser",
-            authId: "APK12345",
-            token: "secure_token"
+    <script>
+        // --- CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdZb8GbRCLr0a-eQSl1QEQ8SuOmKQf1So",
+            authDomain: "iid-2026.firebaseapp.com",
+            databaseURL: "https://iid-2026-default-rtdb.firebaseio.com",
+            projectId: "iid-2026",
+            storageBucket: "iid-2026.firebasestorage.app",
+            messagingSenderId: "96823275377",
+            appId: "1:96823275377:web:95460e19e1002dca9a50d0",
+            measurementId: "G-711HPBRLNV"
         };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        console.log('✅ APK authenticated:', userData);
+        let currentUser = "";
+        let targetUser = "";
+        let targetPlayerId = "";
+        let myPlayerId = "";
 
-        document.getElementById("loginBox").style.display="none";
-        document.getElementById("calcBox").style.display="block";
+        // Kodular se Player ID lena
+        setInterval(() => {
+            if (window.AppInventor) {
+                let val = window.AppInventor.getWebViewString();
+                if (val && val.includes("player_id:")) {
+                    myPlayerId = val.split(":")[1];
+                    if(currentUser) {
+                        db.ref('users/' + currentUser).update({ onesignal_id: myPlayerId });
+                    }
+                }
+            }
+        }, 3000);
 
-    } else {
-        alert('❌ Invalid code');
-    }
-});
+        // LOGIN FUNCTION
+        function login() {
+            currentUser = document.getElementById('username').value.trim();
+            if (!currentUser) return alert("Naam daaliye!");
+            
+            // Firebase mein user register/update karein
+            db.ref('users/' + currentUser).update({
+                name: currentUser,
+                lastSeen: Date.now(),
+                onesignal_id: myPlayerId || "not_set"
+            });
 
-// CALCULATOR
-let display = document.getElementById("display");
+            document.getElementById('login-page').classList.add('hidden');
+            showDashboard();
+        }
 
-function press(val){
-    if(display.innerText==="0") display.innerText=val;
-    else display.innerText+=val;
-}
+        // DASHBOARD SHOW KARNA
+        function showDashboard() {
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('chat-room').classList.add('hidden');
+            loadUsers();
+        }
 
-function clearDisplay(){
-    display.innerText="0";
-}
+        function loadUsers() {
+            db.ref('users').on('value', (snapshot) => {
+                const users = snapshot.val();
+                let html = "";
+                for (let id in users) {
+                    if (id !== currentUser) {
+                        html += `<div class="user-item" onclick="startChat('${id}', '${users[id].onesignal_id}')">${id}</div>`;
+                    }
+                }
+                document.getElementById('user-list').innerHTML = html || "Koi dusra user online nahi hai";
+            });
+        }
 
-function calculate(){
-    try{
-        display.innerText = eval(display.innerText);
-    }catch{
-        display.innerText="Error";
-    }
-}
+        // CHAT START KARNA
+        function startChat(id, pId) {
+            targetUser = id;
+            targetPlayerId = pId;
+            document.getElementById('chatting-with').innerText = id;
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('chat-room').classList.remove('hidden');
+            loadMessages();
+        }
 
-</script>
+        // MESSAGE BHEJNA
+        function sendMessage() {
+            let text = document.getElementById('msgInput').value;
+            if (!text) return;
 
+            let chatId = [currentUser, targetUser].sort().join("_");
+            db.ref('chats/' + chatId).push({
+                sender: currentUser,
+                text: text,
+                time: Date.now()
+            });
+
+            // Notification bhejna
+            if (targetPlayerId && targetPlayerId !== "not_set") {
+                sendNotification(targetPlayerId, text);
+            }
+
+            document.getElementById('msgInput').value = "";
+        }
+
+        // ONE SIGNAL NOTIFICATION API
+        function sendNotification(pId, msg) {
+            fetch("https://onesignal.com/api/v1/notifications", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Basic os_v2_app_t47yuqe4q5fgrpesmxre4khscgc7mwxkcdzuu7nlqhrrpmyphu42ryy4rpqxfoxkeixwzk3t5774y22b4op2u6guvolj2kuum5uwjdi"
+                },
+                body: JSON.stringify({
+                    app_id: "9f3f8a40-9c87-4a68-bc92-65e24e28f211",
+                    include_player_ids: [pId],
+                    contents: {"en": msg},
+                    headings: {"en": "New Message from " + currentUser}
+                })
+            });
+        }
+
+        // MESSAGES LOAD KARNA (Realtime)
+        function loadMessages() {
+            let chatId = [currentUser, targetUser].sort().join("_");
+            db.ref('chats/' + chatId).on('value', (snapshot) => {
+                let msgs = snapshot.val();
+                let html = "";
+                for (let m in msgs) {
+                    let type = msgs[m].sender === currentUser ? "sent" : "received";
+                    html += `<div class="msg ${type}">${msgs[m].text}</div>`;
+                }
+                let container = document.getElementById('messages');
+                container.innerHTML = html;
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+    </script>
 </body>
 </html>
