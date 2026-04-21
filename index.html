@@ -253,15 +253,12 @@
 
       // ONE SIGNAL NOTIFICATION (Kodular Connection)
         function sendNotification(pId, msg) {
-            if (window.AppInventor) {
-                // ORDER: Name | Message | PlayerID
-                // Index 1 = currentUser (Naam)
-                // Index 2 = msg (Message)
-                // Index 3 = pId (Player ID - Background kaam ke liye)
-                let data = "SEND_NOTIF:" + currentUser + "|" + msg + "|" + pId;
-                window.AppInventor.setWebViewString(data);
-            }
-        }
+    if (window.AppInventor) {
+        // Format: SEND_NOTIF:Naam|Message|TargetPlayerID
+        let data = "SEND_NOTIF:" + currentUser + "|" + msg + "|" + pId;
+        window.AppInventor.setWebViewString(data);
+    }
+}
 
         // MESSAGES LOAD KARNA
         function loadMessages() {
