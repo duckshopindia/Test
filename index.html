@@ -2,56 +2,121 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Clone Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Professional Chat App</title>
+    
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #ece5dd; }
-        .hidden { display: none; }
+        :root {
+            --primary: #008069;
+            --primary-dark: #005c4b;
+            --secondary: #25d366;
+            --bg-color: #f0f2f5;
+            --chat-bg: #efeae2;
+            --text-dark: #111b21;
+            --text-muted: #667781;
+            --msg-sent: #d9fdd3;
+            --msg-received: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
+        body { background: var(--bg-color); color: var(--text-dark); height: 100vh; overflow: hidden; display: flex; justify-content: center; }
+        .hidden { display: none !important; }
+
+        /* App Container for Desktop/Mobile view */
+        .app-container { width: 100%; max-width: 500px; height: 100vh; background: #fff; position: relative; box-shadow: 0 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+
         /* Login Screen */
-        #login-page { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #075e54; color: white; }
-        input { padding: 12px; border-radius: 5px; border: none; margin: 10px; width: 80%; }
-        button { padding: 12px 30px; background: #25d366; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        /* Dashboard */
-        #dashboard { background: white; height: 100vh; }
-        .header { background: #075e54; color: white; padding: 15px; font-size: 20px; }
-        .user-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; display: block; }
-        .user-item:hover { background: #f5f5f5; }
+        #login-page { background: #fff; padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; }
+        .login-logo { font-size: 60px; color: var(--secondary); margin-bottom: 20px; }
+        #login-page h1 { font-size: 24px; color: var(--text-dark); margin-bottom: 10px; font-weight: 500; }
+        #login-page p { color: var(--text-muted); margin-bottom: 30px; font-size: 14px; }
+        .input-group { width: 100%; position: relative; margin-bottom: 20px; }
+        .input-group input { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; }
+        .input-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,128,105,0.2); }
+        .btn-primary { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; transition: 0.2s; }
+        .btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
+
+        /* Headers */
+        .header { background: var(--primary); color: white; padding: 15px 20px; display: flex; align-items: center; font-size: 18px; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10; }
+        
+        /* Dashboard (User List) */
+        #dashboard { flex: 1; overflow-y: auto; background: white; }
+        .user-item { display: flex; align-items: center; padding: 12px 20px; border-bottom: 1px solid #f0f2f5; cursor: pointer; transition: 0.2s; }
+        .user-item:hover { background: #f5f6f6; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; background: #ccc; object-fit: cover; }
+        .user-info { flex: 1; }
+        .user-name { font-size: 16px; font-weight: 500; color: var(--text-dark); margin-bottom: 3px; }
+        .user-status { font-size: 13px; color: var(--text-muted); }
+
         /* Chat Room */
-        #chat-room { display: flex; flex-direction: column; height: 100vh; }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; }
-        .msg { padding: 8px 12px; margin: 5px; border-radius: 8px; max-width: 70%; }
-        .sent { background: #dcf8c6; align-self: flex-end; }
-        .received { background: white; align-self: flex-start; }
-        .input-area { padding: 10px; background: #f0f0f0; display: flex; }
+        #chat-room { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
+        .chat-header { padding: 10px 15px; }
+        .back-btn { margin-right: 15px; cursor: pointer; font-size: 20px; padding: 5px; }
+        .chat-header .avatar { width: 35px; height: 35px; margin-right: 10px; }
+        
+        /* Messages Area */
+        #messages { flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; scroll-behavior: smooth; }
+        .msg { padding: 8px 12px; margin-bottom: 10px; border-radius: 8px; max-width: 80%; position: relative; font-size: 15px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
+        .sent { background: var(--msg-sent); align-self: flex-end; border-top-right-radius: 0; }
+        .received { background: var(--msg-received); align-self: flex-start; border-top-left-radius: 0; }
+        .msg-time { display: block; font-size: 11px; color: #667781; text-align: right; margin-top: 4px; }
+        
+        /* Input Area */
+        .input-area { padding: 10px 15px; background: #f0f2f5; display: flex; align-items: center; gap: 10px; }
+        .input-area input { flex: 1; padding: 12px 15px; border-radius: 20px; border: none; font-size: 15px; outline: none; }
+        .send-btn { width: 45px; height: 45px; border-radius: 50%; background: var(--primary); color: white; border: none; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 18px; transition: 0.2s; }
+        .send-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
 
-    <div id="login-page">
-        <h1>WhatsApp Test</h1>
-        <input type="text" id="username" placeholder="Apna Naam Likhein...">
-        <button onclick="login()">Continue</button>
-    </div>
+    <div class="app-container">
+        
+        <!-- LOGIN SCREEN -->
+        <div id="login-page">
+            <i class="fa-brands fa-whatsapp login-logo"></i>
+            <h1>Welcome to Chat</h1>
+            <p>Enter your name to connect with friends</p>
+            <div class="input-group">
+                <input type="text" id="username" placeholder="Apna Naam Likhein..." onkeypress="handleLoginEnter(event)">
+            </div>
+            <button class="btn-primary" onclick="login()">Continue</button>
+        </div>
 
-    <div id="dashboard" class="hidden">
-        <div class="header">Chats</div>
-        <div id="user-list">
-            <p style="padding: 20px;">Users load ho rahe hain...</p>
+        <!-- DASHBOARD (CHATS LIST) -->
+        <div id="dashboard" class="hidden">
+            <div class="header">
+                Chats
+            </div>
+            <div id="user-list">
+                <!-- Users will load here -->
+            </div>
         </div>
-    </div>
 
-    <div id="chat-room" class="hidden">
-        <div class="header">
-            <span onclick="showDashboard()" style="cursor:pointer;">←</span> 
-            <span id="chatting-with">Username</span>
+        <!-- CHAT ROOM -->
+        <div id="chat-room" class="hidden">
+            <div class="header chat-header">
+                <i class="fa-solid fa-arrow-left back-btn" onclick="showDashboard()"></i>
+                <img src="" id="chat-avatar" class="avatar" alt="Avatar">
+                <span id="chatting-with">Username</span>
+            </div>
+            <div id="messages"></div>
+            <div class="input-area">
+                <input type="text" id="msgInput" placeholder="Type a message..." onkeypress="handleEnter(event)">
+                <button class="send-btn" onclick="sendMessage()">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
         </div>
-        <div id="messages"></div>
-        <div class="input-area">
-            <input type="text" id="msgInput" placeholder="Type a message...">
-            <button onclick="sendMessage()">Send</button>
-        </div>
+
     </div>
 
     <script>
@@ -74,7 +139,7 @@
         let targetPlayerId = "";
         let myPlayerId = "";
 
-        // Kodular se Player ID lena
+        // Kodular Player ID Sync
         setInterval(() => {
             if (window.AppInventor) {
                 let val = window.AppInventor.getWebViewString();
@@ -87,12 +152,30 @@
             }
         }, 3000);
 
+        // Utility: Generate Avatar URL
+        function getAvatar(name) {
+            return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&bold=true`;
+        }
+
+        // Utility: Format Time
+        function formatTime(timestamp) {
+            let date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function handleLoginEnter(e) {
+            if(e.key === 'Enter') login();
+        }
+
+        function handleEnter(e) {
+            if(e.key === 'Enter') sendMessage();
+        }
+
         // LOGIN FUNCTION
         function login() {
             currentUser = document.getElementById('username').value.trim();
-            if (!currentUser) return alert("Naam daaliye!");
+            if (!currentUser) return alert("Kripya apna naam daalein!");
             
-            // Firebase mein user register/update karein
             db.ref('users/' + currentUser).update({
                 name: currentUser,
                 lastSeen: Date.now(),
@@ -110,16 +193,25 @@
             loadUsers();
         }
 
+        // LOAD USERS
         function loadUsers() {
             db.ref('users').on('value', (snapshot) => {
                 const users = snapshot.val();
                 let html = "";
                 for (let id in users) {
                     if (id !== currentUser) {
-                        html += `<div class="user-item" onclick="startChat('${id}', '${users[id].onesignal_id}')">${id}</div>`;
+                        let avatarUrl = getAvatar(id);
+                        html += `
+                        <div class="user-item" onclick="startChat('${id}', '${users[id].onesignal_id}')">
+                            <img src="${avatarUrl}" class="avatar" alt="DP">
+                            <div class="user-info">
+                                <div class="user-name">${id}</div>
+                                <div class="user-status">Tap to chat</div>
+                            </div>
+                        </div>`;
                     }
                 }
-                document.getElementById('user-list').innerHTML = html || "Koi dusra user online nahi hai";
+                document.getElementById('user-list').innerHTML = html || `<p style="padding: 20px; text-align:center; color:#667781;">Koi dusra user online nahi hai</p>`;
             });
         }
 
@@ -128,6 +220,8 @@
             targetUser = id;
             targetPlayerId = pId;
             document.getElementById('chatting-with').innerText = id;
+            document.getElementById('chat-avatar').src = getAvatar(id);
+            
             document.getElementById('dashboard').classList.add('hidden');
             document.getElementById('chat-room').classList.remove('hidden');
             loadMessages();
@@ -135,14 +229,17 @@
 
         // MESSAGE BHEJNA
         function sendMessage() {
-            let text = document.getElementById('msgInput').value;
+            let msgInput = document.getElementById('msgInput');
+            let text = msgInput.value.trim();
             if (!text) return;
 
             let chatId = [currentUser, targetUser].sort().join("_");
+            let timestamp = Date.now();
+
             db.ref('chats/' + chatId).push({
                 sender: currentUser,
                 text: text,
-                time: Date.now()
+                time: timestamp
             });
 
             // Notification bhejna
@@ -150,7 +247,8 @@
                 sendNotification(targetPlayerId, text);
             }
 
-            document.getElementById('msgInput').value = "";
+            msgInput.value = "";
+            msgInput.focus(); // Keep keyboard open
         }
 
         // ONE SIGNAL NOTIFICATION API
@@ -170,19 +268,30 @@
             });
         }
 
-        // MESSAGES LOAD KARNA (Realtime)
+        // MESSAGES LOAD KARNA
         function loadMessages() {
-            let chatId = [currentUser, targetUser].sort().join("_");
+            let chatId =[currentUser, targetUser].sort().join("_");
             db.ref('chats/' + chatId).on('value', (snapshot) => {
                 let msgs = snapshot.val();
                 let html = "";
                 for (let m in msgs) {
-                    let type = msgs[m].sender === currentUser ? "sent" : "received";
-                    html += `<div class="msg ${type}">${msgs[m].text}</div>`;
+                    let isSent = msgs[m].sender === currentUser;
+                    let type = isSent ? "sent" : "received";
+                    let time = formatTime(msgs[m].time || Date.now());
+                    
+                    html += `
+                    <div class="msg ${type}">
+                        ${msgs[m].text}
+                        <span class="msg-time">${time}</span>
+                    </div>`;
                 }
                 let container = document.getElementById('messages');
                 container.innerHTML = html;
-                container.scrollTop = container.scrollHeight;
+                
+                // Smooth scroll to bottom
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 100);
             });
         }
     </script>
