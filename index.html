@@ -253,20 +253,32 @@
 
         // ONE SIGNAL NOTIFICATION API
         function sendNotification(pId, msg) {
-            fetch("https://onesignal.com/api/v1/notifications", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Basic os_v2_app_t47yuqe4q5fgrpesmxre4khscgc7mwxkcdzuu7nlqhrrpmyphu42ryy4rpqxfoxkeixwzk3t5774y22b4op2u6guvolj2kuum5uwjdi"
-                },
-                body: JSON.stringify({
-                    app_id: "9f3f8a40-9c87-4a68-bc92-65e24e28f211",
-                    include_player_ids: [pId],
-                    contents: {"en": msg},
-                    headings: {"en": "New Message from " + currentUser}
-                })
-            });
+    const restKey = "os_v2_app_t47yuqe4q5fgrpesmxre4khscgc7mwxkcdzuu7nlqhrrpmyphu42ryy4rpqxfoxkeixwzk3t5774y22b4op2u6guvolj2kuum5uwjdi";
+
+    fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Basic " + restKey 
+        },
+        body: JSON.stringify({
+            app_id: "9f3f8a40-9c87-4a68-bc92-65e24e28f211",
+            include_player_ids: [pId],
+            contents: {"en": msg},
+            headings: {"en": "New Message from " + currentUser}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Yeh line aapko error dikhayegi
+        if(data.errors) {
+            alert("OneSignal Error: " + JSON.stringify(data.errors));
+        } else {
+            console.log("Notification Sent!", data);
         }
+    })
+    .catch(error => alert("Network Error: " + error));
+}
 
         // MESSAGES LOAD KARNA
         function loadMessages() {
