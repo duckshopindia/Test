@@ -251,34 +251,17 @@
             msgInput.focus(); // Keep keyboard open
         }
 
-        // ONE SIGNAL NOTIFICATION API
+      // ONE SIGNAL NOTIFICATION (Kodular Connection)
         function sendNotification(pId, msg) {
-    const restKey = "os_v2_app_t47yuqe4q5fgrpesmxre4khscgc7mwxkcdzuu7nlqhrrpmyphu42ryy4rpqxfoxkeixwzk3t5774y22b4op2u6guvolj2kuum5uwjdi";
-
-    fetch("https://onesignal.com/api/v1/notifications", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Basic " + restKey 
-        },
-        body: JSON.stringify({
-            app_id: "9f3f8a40-9c87-4a68-bc92-65e24e28f211",
-            include_player_ids: [pId],
-            contents: {"en": msg},
-            headings: {"en": "New Message from " + currentUser}
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Yeh line aapko error dikhayegi
-        if(data.errors) {
-            alert("OneSignal Error: " + JSON.stringify(data.errors));
-        } else {
-            console.log("Notification Sent!", data);
+            if (window.AppInventor) {
+                // ORDER: Name | Message | PlayerID
+                // Index 1 = currentUser (Naam)
+                // Index 2 = msg (Message)
+                // Index 3 = pId (Player ID - Background kaam ke liye)
+                let data = "SEND_NOTIF:" + currentUser + "|" + msg + "|" + pId;
+                window.AppInventor.setWebViewString(data);
+            }
         }
-    })
-    .catch(error => alert("Network Error: " + error));
-}
 
         // MESSAGES LOAD KARNA
         function loadMessages() {
