@@ -1,54 +1,291 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatzeno Gallery Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Professional Chat App</title>
+    
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-            font-family: sans-serif;
+        :root {
+            --primary: #008069;
+            --primary-dark: #005c4b;
+            --secondary: #25d366;
+            --bg-color: #f0f2f5;
+            --chat-bg: #efeae2;
+            --text-dark: #111b21;
+            --text-muted: #667781;
+            --msg-sent: #d9fdd3;
+            --msg-received: #ffffff;
         }
-        .gallery-btn {
-            background-color: #25D366; /* WhatsApp Green */
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 25px;
-            font-size: 18px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        #status {
-            margin-top: 20px;
-            color: #555;
-        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
+        body { background: var(--bg-color); color: var(--text-dark); height: 100vh; overflow: hidden; display: flex; justify-content: center; }
+        .hidden { display: none !important; }
+
+        /* App Container for Desktop/Mobile view */
+        .app-container { width: 100%; max-width: 500px; height: 100vh; background: #fff; position: relative; box-shadow: 0 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+
+        /* Login Screen */
+        #login-page { background: #fff; padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; }
+        .login-logo { font-size: 60px; color: var(--secondary); margin-bottom: 20px; }
+        #login-page h1 { font-size: 24px; color: var(--text-dark); margin-bottom: 10px; font-weight: 500; }
+        #login-page p { color: var(--text-muted); margin-bottom: 30px; font-size: 14px; }
+        .input-group { width: 100%; position: relative; margin-bottom: 20px; }
+        .input-group input { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; }
+        .input-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,128,105,0.2); }
+        .btn-primary { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; transition: 0.2s; }
+        .btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
+
+        /* Headers */
+        .header { background: var(--primary); color: white; padding: 15px 20px; display: flex; align-items: center; font-size: 18px; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10; }
+        
+        /* Dashboard (User List) */
+        #dashboard { flex: 1; overflow-y: auto; background: white; }
+        .user-item { display: flex; align-items: center; padding: 12px 20px; border-bottom: 1px solid #f0f2f5; cursor: pointer; transition: 0.2s; }
+        .user-item:hover { background: #f5f6f6; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; background: #ccc; object-fit: cover; }
+        .user-info { flex: 1; }
+        .user-name { font-size: 16px; font-weight: 500; color: var(--text-dark); margin-bottom: 3px; }
+        .user-status { font-size: 13px; color: var(--text-muted); }
+
+        /* Chat Room */
+        #chat-room { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
+        .chat-header { padding: 10px 15px; }
+        .back-btn { margin-right: 15px; cursor: pointer; font-size: 20px; padding: 5px; }
+        .chat-header .avatar { width: 35px; height: 35px; margin-right: 10px; }
+        
+        /* Messages Area */
+        #messages { flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; scroll-behavior: smooth; }
+        .msg { padding: 8px 12px; margin-bottom: 10px; border-radius: 8px; max-width: 80%; position: relative; font-size: 15px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
+        .sent { background: var(--msg-sent); align-self: flex-end; border-top-right-radius: 0; }
+        .received { background: var(--msg-received); align-self: flex-start; border-top-left-radius: 0; }
+        .msg-time { display: block; font-size: 11px; color: #667781; text-align: right; margin-top: 4px; }
+        
+        /* Input Area */
+        .input-area { padding: 10px 15px; background: #f0f2f5; display: flex; align-items: center; gap: 10px; }
+        .input-area input { flex: 1; padding: 12px 15px; border-radius: 20px; border: none; font-size: 15px; outline: none; }
+        .send-btn { width: 45px; height: 45px; border-radius: 50%; background: var(--primary); color: white; border: none; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 18px; transition: 0.2s; }
+        .send-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
 
-    <button class="gallery-btn" onclick="openGallery()">
-        Open Gallery
-    </button>
+    <div class="app-container">
+        
+        <!-- LOGIN SCREEN -->
+        <div id="login-page">
+            <i class="fa-brands fa-whatsapp login-logo"></i>
+            <h1>Welcome to Chat</h1>
+            <p>Enter your name to connect with friends</p>
+            <div class="input-group">
+                <input type="text" id="username" placeholder="Apna Naam Likhein..." onkeypress="handleLoginEnter(event)">
+            </div>
+            <button class="btn-primary" onclick="login()">Continue</button>
+        </div>
 
-    <div id="status">Button click karo test karne ke liye</div>
+        <!-- DASHBOARD (CHATS LIST) -->
+        <div id="dashboard" class="hidden">
+            <div class="header">
+                Chats
+            </div>
+            <div id="user-list">
+                <!-- Users will load here -->
+            </div>
+        </div>
+
+        <!-- CHAT ROOM -->
+        <div id="chat-room" class="hidden">
+            <div class="header chat-header">
+                <i class="fa-solid fa-arrow-left back-btn" onclick="showDashboard()"></i>
+                <img src="" id="chat-avatar" class="avatar" alt="Avatar">
+                <span id="chatting-with">Username</span>
+            </div>
+            <div id="messages"></div>
+            <div class="input-area">
+                <input type="text" id="msgInput" placeholder="Type a message..." onkeypress="handleEnter(event)">
+                <button class="send-btn" onclick="sendMessage()">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
 
     <script>
-        function openGallery() {
-            // Ye line Kodular ke 'WebViewStringChange' ko signal bhejti hai
-            if (window.AppInventory) {
-                window.AppInventory.setWebViewString("OPEN_GALLERY");
-                document.getElementById('status').innerText = "Signal bhej diya: OPEN_GALLERY";
-            } else {
-                document.getElementById('status').innerText = "Error: AppInventory nahi mila!";
+        // --- CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdZb8GbRCLr0a-eQSl1QEQ8SuOmKQf1So",
+            authDomain: "iid-2026.firebaseapp.com",
+            databaseURL: "https://iid-2026-default-rtdb.firebaseio.com",
+            projectId: "iid-2026",
+            storageBucket: "iid-2026.firebasestorage.app",
+            messagingSenderId: "96823275377",
+            appId: "1:96823275377:web:95460e19e1002dca9a50d0",
+            measurementId: "G-711HPBRLNV"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let currentUser = "";
+        let targetUser = "";
+        let targetPlayerId = "";
+        let myPlayerId = "";
+
+        // Kodular Player ID Sync
+        setInterval(() => {
+            if (window.AppInventor) {
+                let val = window.AppInventor.getWebViewString();
+                if (val && val.includes("player_id:")) {
+                    myPlayerId = val.split(":")[1];
+                    if(currentUser) {
+                        db.ref('users/' + currentUser).update({ onesignal_id: myPlayerId });
+                    }
+                }
             }
+        }, 3000);
+
+        // Utility: Generate Avatar URL
+        function getAvatar(name) {
+            return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&bold=true`;
+        }
+
+        // Utility: Format Time
+        function formatTime(timestamp) {
+            let date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function handleLoginEnter(e) {
+            if(e.key === 'Enter') login();
+        }
+
+        function handleEnter(e) {
+            if(e.key === 'Enter') sendMessage();
+        }
+
+        // LOGIN FUNCTION
+        function login() {
+            currentUser = document.getElementById('username').value.trim();
+            if (!currentUser) return alert("Kripya apna naam daalein!");
+            
+            db.ref('users/' + currentUser).update({
+                name: currentUser,
+                lastSeen: Date.now(),
+                onesignal_id: myPlayerId || "not_set"
+            });
+
+            document.getElementById('login-page').classList.add('hidden');
+            showDashboard();
+        }
+
+        // DASHBOARD SHOW KARNA
+        function showDashboard() {
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('chat-room').classList.add('hidden');
+            loadUsers();
+        }
+
+        // LOAD USERS
+        function loadUsers() {
+            db.ref('users').on('value', (snapshot) => {
+                const users = snapshot.val();
+                let html = "";
+                for (let id in users) {
+                    if (id !== currentUser) {
+                        let avatarUrl = getAvatar(id);
+                        html += `
+                        <div class="user-item" onclick="startChat('${id}', '${users[id].onesignal_id}')">
+                            <img src="${avatarUrl}" class="avatar" alt="DP">
+                            <div class="user-info">
+                                <div class="user-name">${id}</div>
+                                <div class="user-status">Tap to chat</div>
+                            </div>
+                        </div>`;
+                    }
+                }
+                document.getElementById('user-list').innerHTML = html || `<p style="padding: 20px; text-align:center; color:#667781;">Koi dusra user online nahi hai</p>`;
+            });
+        }
+
+        // CHAT START KARNA
+        function startChat(id, pId) {
+            targetUser = id;
+            targetPlayerId = pId;
+            document.getElementById('chatting-with').innerText = id;
+            document.getElementById('chat-avatar').src = getAvatar(id);
+            
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('chat-room').classList.remove('hidden');
+            loadMessages();
+        }
+
+        // MESSAGE BHEJNA
+        function sendMessage() {
+            let msgInput = document.getElementById('msgInput');
+            let text = msgInput.value.trim();
+            if (!text) return;
+
+            let chatId = [currentUser, targetUser].sort().join("_");
+            let timestamp = Date.now();
+
+            db.ref('chats/' + chatId).push({
+                sender: currentUser,
+                text: text,
+                time: timestamp
+            });
+
+            // Notification bhejna
+            if (targetPlayerId && targetPlayerId !== "not_set") {
+                sendNotification(targetPlayerId, text);
+            }
+
+            msgInput.value = "";
+            msgInput.focus(); // Keep keyboard open
+        }
+
+      // ONE SIGNAL NOTIFICATION (Kodular Connection)
+        function sendNotification(pId, msg) {
+    if (window.AppInventor) {
+        // Format: SEND_NOTIF:Naam|Message|TargetPlayerID
+        let data = "SEND_NOTIF:" + currentUser + "|" + msg + "|" + pId;
+        window.AppInventor.setWebViewString(data);
+    }
+}
+
+        // MESSAGES LOAD KARNA
+        function loadMessages() {
+            let chatId =[currentUser, targetUser].sort().join("_");
+            db.ref('chats/' + chatId).on('value', (snapshot) => {
+                let msgs = snapshot.val();
+                let html = "";
+                for (let m in msgs) {
+                    let isSent = msgs[m].sender === currentUser;
+                    let type = isSent ? "sent" : "received";
+                    let time = formatTime(msgs[m].time || Date.now());
+                    
+                    html += `
+                    <div class="msg ${type}">
+                        ${msgs[m].text}
+                        <span class="msg-time">${time}</span>
+                    </div>`;
+                }
+                let container = document.getElementById('messages');
+                container.innerHTML = html;
+                
+                // Smooth scroll to bottom
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 100);
+            });
         }
     </script>
-
 </body>
 </html>
