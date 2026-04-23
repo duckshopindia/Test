@@ -2,296 +2,691 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>AI Assistant Chat</title>
-    
     <!-- Google Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
     <style>
-        :root {
-            --primary: #008069;
-            --primary-dark: #005c4b;
-            --secondary: #25d366;
-            --bg-color: #f0f2f5;
-            --chat-bg: #efeae2;
-            --text-dark: #111b21;
-            --text-muted: #667781;
-            --msg-sent: #d9fdd3;
-            --msg-received: #ffffff;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
-        body { background: var(--bg-color); color: var(--text-dark); height: 100vh; overflow: hidden; display: flex; justify-content: center; }
-        .hidden { display: none !important; }
+        body {
+            background: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
 
-        /* App Container */
-        .app-container { width: 100%; max-width: 500px; height: 100vh; background: #fff; position: relative; box-shadow: 0 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        /* Main app container */
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
 
-        /* Login Screen */
-        #login-page { background: #fff; padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; }
-        .login-logo { font-size: 60px; color: var(--secondary); margin-bottom: 20px; }
-        #login-page h1 { font-size: 24px; color: var(--text-dark); margin-bottom: 10px; font-weight: 500; }
-        #login-page p { color: var(--text-muted); margin-bottom: 30px; font-size: 14px; }
-        .input-group { width: 100%; position: relative; margin-bottom: 15px; }
-        .input-group input { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; }
-        .input-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,128,105,0.2); }
-        .btn-primary { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; transition: 0.2s; margin-top: 10px; }
-        .btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
+        .hidden {
+            display: none !important;
+        }
 
-        /* Chat Header */
-        .header { background: var(--primary); color: white; padding: 15px 20px; display: flex; align-items: center; font-size: 18px; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10; }
-        .chat-header { padding: 10px 15px; }
-        .chat-header .avatar { width: 35px; height: 35px; margin-right: 10px; border-radius: 50%; }
-        
-        /* Messages Area */
-        #chat-room { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
-        #messages { flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; scroll-behavior: smooth; }
-        .msg { padding: 8px 12px; margin-bottom: 10px; border-radius: 8px; max-width: 80%; position: relative; font-size: 15px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
-        .sent { background: var(--msg-sent); align-self: flex-end; border-top-right-radius: 0; }
-        .received { background: var(--msg-received); align-self: flex-start; border-top-left-radius: 0; }
-        .msg-time { display: block; font-size: 11px; color: #667781; text-align: right; margin-top: 4px; }
-        
-        /* Input Area */
-        .input-area { padding: 10px 15px; background: #f0f2f5; display: flex; align-items: center; gap: 10px; }
-        .input-area input { flex: 1; padding: 12px 15px; border-radius: 20px; border: none; font-size: 15px; outline: none; }
-        .send-btn { width: 45px; height: 45px; border-radius: 50%; background: var(--primary); color: white; border: none; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 18px; transition: 0.2s; }
-        .send-btn:active { transform: scale(0.9); }
-        .send-btn:disabled { background: #999; cursor: not-allowed; }
-        
-        #ai-typing { font-size: 12px; color: #008069; margin-bottom: 5px; padding: 0 15px; text-align: left; display: none; font-style: italic; }
+        /* ----- LOGIN SCREEN (Two names) ----- */
+        #login-screen {
+            background: #fff;
+            padding: 30px 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+        }
+
+        .login-icon {
+            font-size: 68px;
+            color: #25d366;
+            margin-bottom: 20px;
+        }
+
+        #login-screen h1 {
+            font-size: 26px;
+            font-weight: 500;
+            color: #111b21;
+            margin-bottom: 8px;
+        }
+
+        #login-screen p {
+            color: #667781;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        .input-field {
+            width: 100%;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #008069;
+            margin-bottom: 6px;
+        }
+
+        .input-field input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 28px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.2s;
+            background: #fafafa;
+        }
+
+        .input-field input:focus {
+            border-color: #008069;
+            box-shadow: 0 0 0 2px rgba(0,128,105,0.2);
+            background: white;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: #008069;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: 0.2s;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+            background: #005c4b;
+        }
+
+        /* ----- CHAT ROOM (AI Conversation) ----- */
+        #chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #efeae2;
+            height: 100%;
+        }
+
+        .chat-header {
+            background: #008069;
+            color: white;
+            padding: 15px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .ai-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #25d366;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+        }
+
+        .chat-header .info {
+            flex: 1;
+        }
+
+        .chat-header .ai-name {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .chat-header .online-status {
+            font-size: 12px;
+            opacity: 0.85;
+        }
+
+        /* Messages area */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            position: relative;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.05);
+        }
+
+        .user-msg {
+            background: #d9fdd3;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-msg {
+            background: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg-time {
+            display: block;
+            font-size: 10px;
+            color: #667781;
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: white;
+            border-radius: 24px;
+            width: fit-content;
+            margin-top: 8px;
+            margin-bottom: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #a9a9a9;
+            border-radius: 50%;
+            animation: blink 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes blink {
+            0%, 60%, 100% { opacity: 0.3; transform: scale(0.8);}
+            30% { opacity: 1; transform: scale(1.1);}
+        }
+
+        /* Input area */
+        .input-bar {
+            background: #f0f2f5;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .input-bar input {
+            flex: 1;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 28px;
+            font-size: 15px;
+            background: white;
+            outline: none;
+        }
+
+        .input-bar button {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: #008069;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-bar button:active {
+            transform: scale(0.92);
+            background: #005c4b;
+        }
+
+        .input-bar button:disabled {
+            background: #b2bec3;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* reset some old classes */
+        .hidden-page {
+            display: none;
+        }
+
+        .text-small {
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <!-- LOGIN SCREEN -->
-        <div id="login-page">
-            <i class="fa-solid fa-robot login-logo"></i>
-            <h1>AI Chat Setup</h1>
-            <p>Apna aur AI Assistant ka naam dalein</p>
-            <div class="input-group">
-                <input type="text" id="username" placeholder="Apna Naam..." onkeypress="handleLoginEnter(event)">
-            </div>
-            <div class="input-group">
-                <input type="text" id="ainame" placeholder="AI Assistant Ka Naam..." onkeypress="handleLoginEnter(event)">
-            </div>
-            <button class="btn-primary" onclick="login()">Start Chat</button>
+<div class="app-container">
+    <!-- LOGIN SCREEN: AI name + User name -->
+    <div id="login-screen">
+        <div class="login-icon">
+            <i class="fa-regular fa-message"></i>
         </div>
-
-        <!-- CHAT ROOM -->
-        <div id="chat-room" class="hidden">
-            <div class="header chat-header">
-                <img src="" id="chat-avatar" class="avatar" alt="Avatar">
-                <span id="chatting-with">AI Name</span>
-            </div>
-            <div id="messages">
-                <!-- Messages load here -->
-            </div>
-            <div id="ai-typing">AI is typing...</div>
-            <div class="input-area">
-                <input type="text" id="msgInput" placeholder="Message AI..." onkeypress="handleEnter(event)">
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
-            </div>
+        <h1>AI Companion Chat</h1>
+        <p>Setup your AI assistant & start chatting</p>
+        
+        <div class="input-field">
+            <label><i class="fa-regular fa-user"></i> Your Name</label>
+            <input type="text" id="user-name-input" placeholder="e.g., Amit, Priya..." autocomplete="off">
         </div>
+        
+        <div class="input-field">
+            <label><i class="fa-regular fa-robot"></i> AI Assistant Name</label>
+            <input type="text" id="ai-name-input" placeholder="e.g., Sara, Nova, Buddy..." autocomplete="off">
+        </div>
+        
+        <button class="btn-primary" id="continue-btn">Continue <i class="fa-regular fa-paper-plane"></i></button>
+        <p class="text-small" style="margin-top: 20px; color:#8e9eab;">✨ AI replies with max 200 words • Notifications only for AI responses</p>
     </div>
 
-    <script>
-        // --- FIREBASE CONFIGURATION ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAdZb8GbRCLr0a-eQSl1QEQ8SuOmKQf1So",
-            authDomain: "iid-2026.firebaseapp.com",
-            databaseURL: "https://iid-2026-default-rtdb.firebaseio.com",
-            projectId: "iid-2026",
-            storageBucket: "iid-2026.firebasestorage.app",
-            messagingSenderId: "96823275377",
-            appId: "1:96823275377:web:95460e19e1002dca9a50d0",
-            measurementId: "G-711HPBRLNV"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+    <!-- CHAT INTERFACE (AI Conversation) -->
+    <div id="chat-container" class="hidden">
+        <div class="chat-header">
+            <div class="ai-avatar" id="header-avatar">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <div class="info">
+                <div class="ai-name" id="header-ai-name">AI Assistant</div>
+                <div class="online-status">✨ online · AI replies within 200 words</div>
+            </div>
+        </div>
 
-        // OpenRouter API Key
-        const OPENROUTER_API_KEY = "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";
+        <div class="messages-area" id="messages-area">
+            <!-- welcome message will appear here -->
+        </div>
 
-        let currentUser = "";
-        let targetAI = "";
-        let myPlayerId = "";
+        <div class="input-bar">
+            <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+            <button id="send-btn"><i class="fa-regular fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
 
-        // Kodular Player ID Sync
-        setInterval(() => {
-            if (window.AppInventor) {
-                let val = window.AppInventor.getWebViewString();
-                if (val && val.includes("player_id:")) {
-                    myPlayerId = val.split(":")[1];
-                }
+<script>
+    // --------------------------------------------------------------
+    // 1. CONFIGURATION
+    // --------------------------------------------------------------
+    const OPENROUTER_API_KEY = "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";
+    // Using a reliable free model via OpenRouter (Mistral 7B instruct, good quality)
+    const AI_MODEL = "mistralai/mistral-7b-instruct:free";
+    
+    // Global variables
+    let currentUserName = "";
+    let aiAssistantName = "";
+    let conversationHistory = [];   // store messages {role, content}
+    let isWaitingForAI = false;      // prevent double sending
+    let currentTypingIndicator = null;
+
+    // DOM elements
+    const loginScreen = document.getElementById('login-screen');
+    const chatContainer = document.getElementById('chat-container');
+    const continueBtn = document.getElementById('continue-btn');
+    const userInputName = document.getElementById('user-name-input');
+    const aiInputName = document.getElementById('ai-name-input');
+    const messagesArea = document.getElementById('messages-area');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const headerAiNameSpan = document.getElementById('header-ai-name');
+    const headerAvatarDiv = document.getElementById('header-avatar');
+
+    // Helper: Scroll to bottom
+    function scrollToBottom() {
+        setTimeout(() => {
+            if (messagesArea) {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
             }
-        }, 3000);
+        }, 100);
+    }
 
-        function getAvatar(name) {
-            return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&bold=true`;
-        }
+    // Helper: Format timestamp (HH:MM)
+    function getFormattedTime() {
+        const now = new Date();
+        return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
 
-        function formatTime(timestamp) {
-            let date = new Date(timestamp);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
+    // Helper: Limit text to max words (200 words)
+    function limitToWords(text, maxWords = 200) {
+        const words = text.trim().split(/\s+/);
+        if (words.length <= maxWords) return text;
+        const truncated = words.slice(0, maxWords).join(' ');
+        return truncated + "... (truncated to 200 words)";
+    }
 
-        function handleLoginEnter(e) { if(e.key === 'Enter') login(); }
-        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
-
-        // LOGIN
-        function login() {
-            currentUser = document.getElementById('username').value.trim();
-            targetAI = document.getElementById('ainame').value.trim();
-            
-            if (!currentUser || !targetAI) return alert("Dono naam daalna zaroori hai!");
-            
-            // Notification Permission (Agar browser/chrome me hai)
-            if ("Notification" in window && Notification.permission !== "granted") {
+    // --------------------------------------------------------------
+    // 2. NOTIFICATION SYSTEM (Only for AI replies) 
+    //    Works with Kodular / App Inventor via setWebViewString
+    // --------------------------------------------------------------
+    function sendAINotification(assistantName, aiMessage) {
+        // Only trigger when AI replies (user messages NO notification)
+        // Keep same pattern compatible with original "notification code" 
+        if (window.AppInventor && typeof window.AppInventor.setWebViewString === "function") {
+            // Format: "AI_NOTIF:AssistantName|MessageBody"
+            const notifData = `AI_NOTIF:${assistantName}|${aiMessage}`;
+            window.AppInventor.setWebViewString(notifData);
+            console.log("📢 Notification sent to Kodular:", notifData);
+        } else {
+            // Fallback for web testing - show browser notification if permitted
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(assistantName, { body: aiMessage.substring(0, 120) });
+            } else if ("Notification" in window && Notification.permission !== "denied") {
                 Notification.requestPermission();
             }
-            
-            document.getElementById('login-page').classList.add('hidden');
-            
-            // Set Header
-            document.getElementById('chatting-with').innerText = targetAI;
-            document.getElementById('chat-avatar').src = getAvatar(targetAI);
-            document.getElementById('chat-room').classList.remove('hidden');
-            
-            loadMessages();
+            console.log("[Web] AI notification would fire:", assistantName, aiMessage.substring(0, 80));
         }
+    }
 
-        // SEND MESSAGE TO FIREBASE
-        function sendMessage() {
-            let msgInput = document.getElementById('msgInput');
-            let text = msgInput.value.trim();
-            if (!text) return;
+    // (Optional) Keep original style - but we only call this on AI reply
+    // No extra pId needed, just AI name & content.
 
-            let chatId = [currentUser, targetAI].sort().join("_");
-            
-            // ❌ USER MESSAGE PE KOI NOTIFICATION TRIGGER NAHI HOGA
-            db.ref('chats/' + chatId).push({
-                sender: currentUser,
-                text: text,
-                time: Date.now()
-            });
-
-            msgInput.value = "";
-            document.getElementById('ai-typing').style.display = "block";
-            document.getElementById('sendBtn').disabled = true;
-
-            // Call AI API
-            fetchAIResponse(text, chatId);
+    // --------------------------------------------------------------
+    // 3. DISPLAY MESSAGE IN CHAT (Both user and AI)
+    // --------------------------------------------------------------
+    function appendMessage(sender, text, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user-msg' : 'ai-msg'}`;
+        
+        // Show sender label only if not user (optional, but shows AI name)
+        if (!isUser) {
+            const senderLabel = document.createElement('div');
+            senderLabel.style.fontWeight = '500';
+            senderLabel.style.fontSize = '12px';
+            senderLabel.style.color = '#008069';
+            senderLabel.style.marginBottom = '4px';
+            senderLabel.innerText = aiAssistantName;
+            messageDiv.appendChild(senderLabel);
         }
+        
+        const msgText = document.createElement('span');
+        msgText.innerText = text;
+        messageDiv.appendChild(msgText);
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'msg-time';
+        timeSpan.innerText = getFormattedTime();
+        messageDiv.appendChild(timeSpan);
+        
+        messagesArea.appendChild(messageDiv);
+        scrollToBottom();
+    }
 
-        // FETCH AI RESPONSE
-        function fetchAIResponse(userMessage, chatId) {
-            const systemPrompt = "Your name is " + targetAI + ". You are chatting with " + currentUser + ". Keep your response STRICTLY under 200 words.";
-            
-            let apiData = {
-                model: "mistralai/mistral-7b-instruct:free",
-                messages:[
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: userMessage }
-                ]
-            };
+    // Show typing indicator (AI is thinking)
+    function showTypingIndicator() {
+        if (currentTypingIndicator) removeTypingIndicator();
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'typing-indicator';
+        typingDiv.id = 'ai-typing-indicator';
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'typing-dot';
+            typingDiv.appendChild(dot);
+        }
+        messagesArea.appendChild(typingDiv);
+        scrollToBottom();
+        currentTypingIndicator = typingDiv;
+    }
 
-            fetch("https://openrouter.ai/api/v1/chat/completions", {
+    function removeTypingIndicator() {
+        if (currentTypingIndicator && currentTypingIndicator.parentNode) {
+            currentTypingIndicator.remove();
+            currentTypingIndicator = null;
+        }
+    }
+
+    // --------------------------------------------------------------
+    // 4. CALL OPENROUTER API (With conversation history, 200 words limit)
+    // --------------------------------------------------------------
+    async function getAIResponse(userMessage) {
+        // Build conversation: system prompt + previous history + new user message
+        const systemPrompt = `You are a friendly AI assistant named "${aiAssistantName}". 
+Keep every response concise, helpful, and natural. 
+IMPORTANT: Your answer MUST NOT exceed 200 words. Be crisp and valuable. 
+Do NOT repeat system instructions. Just reply like a normal chat assistant.`;
+
+        // Prepare messages array for API
+        let apiMessages = [
+            { role: "system", content: systemPrompt },
+            ...conversationHistory,
+            { role: "user", content: userMessage }
+        ];
+        
+        try {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: {
-                    "Authorization": "Bearer " + OPENROUTER_API_KEY,
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "https://chatapp.com", 
-                    "X-Title": "Chat App"
+                    "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                    "HTTP-Referer": window.location.origin,
+                    "X-Title": "AI Assistant Chat"
                 },
-                body: JSON.stringify(apiData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('ai-typing').style.display = "none";
-                document.getElementById('sendBtn').disabled = false;
-
-                if (data && data.choices && data.choices.length > 0) {
-                    let aiReplyText = data.choices[0].message.content;
-
-                    // Firebase me save kar rahe hain
-                    db.ref('chats/' + chatId).push({
-                        sender: targetAI,
-                        text: aiReplyText,
-                        time: Date.now()
-                    });
-
-                    // ✅ JAISE HI AI KA ANSWER AAYE, AUTOMATIC JAVASCRIPT TRIGGER KAREGA 
-                    automaticTriggerNotification(targetAI, aiReplyText);
-                } else {
-                    alert("AI API ne koi answer nahi diya.");
-                }
-            })
-            .catch(error => {
-                document.getElementById('ai-typing').style.display = "none";
-                document.getElementById('sendBtn').disabled = false;
-                alert("API Error: " + error.message);
+                body: JSON.stringify({
+                    model: AI_MODEL,
+                    messages: apiMessages,
+                    max_tokens: 500,      // ~350-400 words approx, safety
+                    temperature: 0.7
+                })
             });
-        }
-
-        // 🌟 JAVASCRIPT AUTOMATIC TRIGGER SYSTEM (Only for AI Replies)
-        function automaticTriggerNotification(aiName, messageText) {
             
-            // 1. KODULAR SYSTEM TRIGGER (Agar app Kodular me hai)
-            if (window.AppInventor) {
-                let pId = myPlayerId ? myPlayerId : "not_set";
-                let data = "SEND_NOTIF:" + aiName + "|" + messageText + "|" + pId;
-                window.AppInventor.setWebViewString(data);
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`API Error (${response.status}): ${errText.substring(0, 100)}`);
             }
-
-            // 2. MOBILE VIBRATION TRIGGER (200 milliseconds vibrate hoga)
-            if (navigator.vibrate) {
-                navigator.vibrate(200); 
-            }
-
-            // 3. JAVASCRIPT BROWSER NOTIFICATION (Agar browser / chrome me hai)
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(aiName, {
-                    body: messageText,
-                    icon: getAvatar(aiName)
-                });
-            }
+            
+            const data = await response.json();
+            let aiReply = data.choices?.[0]?.message?.content || "Sorry, I couldn't generate a response.";
+            
+            // Enforce 200 words limit (strict)
+            aiReply = limitToWords(aiReply, 200);
+            return aiReply;
+        } catch (error) {
+            console.error("OpenRouter error:", error);
+            return `⚠️ Oops! ${aiAssistantName} is having technical issues. Please try again later. (${error.message.substring(0, 80)})`;
         }
+    }
 
-        // LOAD MESSAGES IN CHAT UI
-        function loadMessages() {
-            let chatId =[currentUser, targetAI].sort().join("_");
-            db.ref('chats/' + chatId).on('value', (snapshot) => {
-                let msgs = snapshot.val();
-                let html = "";
-                for (let m in msgs) {
-                    let isSent = msgs[m].sender === currentUser;
-                    let type = isSent ? "sent" : "received";
-                    let time = formatTime(msgs[m].time || Date.now());
-                    
-                    html += `
-                    <div class="msg ${type}">
-                        ${msgs[m].text}
-                        <span class="msg-time">${time}</span>
-                    </div>`;
-                }
-                let container = document.getElementById('messages');
-                container.innerHTML = html;
-                
-                // Auto Scroll to bottom
-                setTimeout(() => {
-                    container.scrollTop = container.scrollHeight;
-                }, 100);
-            });
+    // --------------------------------------------------------------
+    // 5. SEND USER MESSAGE -> get AI reply -> show & send notification
+    // --------------------------------------------------------------
+    async function sendUserMessage() {
+        if (isWaitingForAI) {
+            // subtle feedback
+            messageInput.placeholder = "Waiting for AI response...";
+            return;
         }
-    </script>
+        
+        const userText = messageInput.value.trim();
+        if (!userText) return;
+        
+        // Disable input & button during AI processing
+        isWaitingForAI = true;
+        sendBtn.disabled = true;
+        messageInput.disabled = true;
+        
+        // 1. Append user message to chat
+        appendMessage(currentUserName, userText, true);
+        
+        // 2. Store user message in conversation history
+        conversationHistory.push({ role: "user", content: userText });
+        
+        // 3. Clear input field
+        messageInput.value = "";
+        
+        // 4. Show typing indicator (AI is thinking)
+        showTypingIndicator();
+        
+        try {
+            // 5. Call OpenRouter AI
+            const aiReply = await getAIResponse(userText);
+            
+            // 6. Remove typing indicator
+            removeTypingIndicator();
+            
+            // 7. Append AI message to chat
+            appendMessage(aiAssistantName, aiReply, false);
+            
+            // 8. Store AI response in conversation history
+            conversationHistory.push({ role: "assistant", content: aiReply });
+            
+            // 9. 🔔 IMPORTANT: Notify ONLY for AI reply (as per requirement)
+            //    Assistant name and reply message must appear in notification
+            sendAINotification(aiAssistantName, aiReply);
+            
+            // Keep conversation history manageable (limit last 20 messages to avoid token overload)
+            if (conversationHistory.length > 20) {
+                conversationHistory = conversationHistory.slice(-16);
+            }
+        } catch (err) {
+            removeTypingIndicator();
+            console.error("AI send error:", err);
+            appendMessage(aiAssistantName, "⚠️ Connection issue. Please check network or try again.", false);
+        } finally {
+            // Re-enable controls
+            isWaitingForAI = false;
+            sendBtn.disabled = false;
+            messageInput.disabled = false;
+            messageInput.focus();
+            messageInput.placeholder = "Type your message...";
+        }
+    }
+
+    // Handle Enter key
+    function onEnterKey(e) {
+        if (e.key === 'Enter' && !isWaitingForAI && messageInput.value.trim() !== "") {
+            sendUserMessage();
+        }
+    }
+
+    // --------------------------------------------------------------
+    // 6. INITIALIZE CHAT (after login)
+    // --------------------------------------------------------------
+    function startChatSession(userName, aiName) {
+        currentUserName = userName;
+        aiAssistantName = aiName;
+        
+        // Reset conversation history for fresh chat
+        conversationHistory = [];
+        
+        // Update UI header
+        headerAiNameSpan.innerText = aiAssistantName;
+        headerAvatarDiv.innerHTML = `<i class="fa-solid fa-robot"></i>`;
+        
+        // Clear messages area
+        messagesArea.innerHTML = "";
+        
+        // Add welcome message from AI (first interaction)
+        const welcomeText = `👋 Hello ${currentUserName}! I'm ${aiAssistantName}, your AI companion. Ask me anything, and I'll keep replies short and sweet (within 200 words). How can I help you today?`;
+        
+        // Append welcome message (AI style)
+        const welcomeDiv = document.createElement('div');
+        welcomeDiv.className = 'message ai-msg';
+        const senderLabel = document.createElement('div');
+        senderLabel.style.fontWeight = '500';
+        senderLabel.style.fontSize = '12px';
+        senderLabel.style.color = '#008069';
+        senderLabel.style.marginBottom = '4px';
+        senderLabel.innerText = aiAssistantName;
+        welcomeDiv.appendChild(senderLabel);
+        const msgSpan = document.createElement('span');
+        msgSpan.innerText = welcomeText;
+        welcomeDiv.appendChild(msgSpan);
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'msg-time';
+        timeSpan.innerText = getFormattedTime();
+        welcomeDiv.appendChild(timeSpan);
+        messagesArea.appendChild(welcomeDiv);
+        
+        // Add to conversation history
+        conversationHistory.push({ role: "assistant", content: welcomeText });
+        
+        scrollToBottom();
+        
+        // Enable chat input
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        messageInput.focus();
+        isWaitingForAI = false;
+    }
+
+    // --------------------------------------------------------------
+    // 7. LOGIN VALIDATION & CONTINUE
+    // --------------------------------------------------------------
+    function handleContinue() {
+        const userName = userInputName.value.trim();
+        const aiName = aiInputName.value.trim();
+        
+        if (!userName) {
+            alert("❌ Please enter your name.");
+            userInputName.focus();
+            return;
+        }
+        if (!aiName) {
+            alert("🤖 Please enter a name for your AI assistant.");
+            aiInputName.focus();
+            return;
+        }
+        
+        // Hide login screen, show chat container
+        loginScreen.classList.add('hidden');
+        chatContainer.classList.remove('hidden');
+        
+        // Initialize chat session
+        startChatSession(userName, aiName);
+    }
+
+    // Event listeners
+    continueBtn.addEventListener('click', handleContinue);
+    sendBtn.addEventListener('click', sendUserMessage);
+    messageInput.addEventListener('keypress', onEnterKey);
+    
+    // Optional: allow enter on login inputs (convenience)
+    userInputName.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleContinue(); });
+    aiInputName.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleContinue(); });
+    
+    // Request notification permission for browser fallback (optional)
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+        Notification.requestPermission();
+    }
+    
+    // Extra: For existing Kodular integration keep OpenRouter key automatic
+    // No Firebase clutter, no user list, only AI chat.
+    console.log("✅ AI Chat App Ready — Notifications only on AI replies, each reply ≤200 words.");
+</script>
 </body>
 </html>
