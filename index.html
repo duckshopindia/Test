@@ -64,7 +64,7 @@
         .send-btn:active { transform: scale(0.9); }
         .send-btn:disabled { background: #999; cursor: not-allowed; }
         
-        #ai-typing { font-size: 12px; color: #008069; margin-bottom: 5px; text-align: left; display: none; }
+        #ai-typing { font-size: 12px; color: #008069; margin-bottom: 5px; padding: 0 15px; text-align: left; display: none; font-style: italic; }
     </style>
 </head>
 <body>
@@ -154,6 +154,11 @@
             
             if (!currentUser || !targetAI) return alert("Dono naam daalna zaroori hai!");
             
+            // Notification Permission (Agar browser/chrome me hai)
+            if ("Notification" in window && Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+            
             document.getElementById('login-page').classList.add('hidden');
             
             // Set Header
@@ -172,7 +177,7 @@
 
             let chatId = [currentUser, targetAI].sort().join("_");
             
-            // User ka message Firebase me bhejna (yahan NOTIFICATION NAHI HAI)
+            // ❌ USER MESSAGE PE KOI NOTIFICATION TRIGGER NAHI HOGA
             db.ref('chats/' + chatId).push({
                 sender: currentUser,
                 text: text,
@@ -183,15 +188,14 @@
             document.getElementById('ai-typing').style.display = "block";
             document.getElementById('sendBtn').disabled = true;
 
-            // AI API Call
+            // Call AI API
             fetchAIResponse(text, chatId);
         }
 
-        // FETCH AI RESPONSE (Kodular Webview Friendly Format)
+        // FETCH AI RESPONSE
         function fetchAIResponse(userMessage, chatId) {
             const systemPrompt = "Your name is " + targetAI + ". You are chatting with " + currentUser + ". Keep your response STRICTLY under 200 words.";
             
-            // Using mistral free model which is highly stable on OpenRouter
             let apiData = {
                 model: "mistralai/mistral-7b-instruct:free",
                 messages:[
@@ -205,8 +209,8 @@
                 headers: {
                     "Authorization": "Bearer " + OPENROUTER_API_KEY,
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "https://myapp.com", // Zaroori hai WebView ke liye
-                    "X-Title": "Kodular Chat App"
+                    "HTTP-Referer": "https://chatapp.com", 
+                    "X-Title": "Chat App"
                 },
                 body: JSON.stringify(apiData)
             })
@@ -218,38 +222,51 @@
                 if (data && data.choices && data.choices.length > 0) {
                     let aiReplyText = data.choices[0].message.content;
 
-                    // Save AI Message to Firebase
+                    // Firebase me save kar rahe hain
                     db.ref('chats/' + chatId).push({
                         sender: targetAI,
                         text: aiReplyText,
                         time: Date.now()
                     });
 
-                    // AI KA MESSAGE AAYA -> AB NOTIFICATION BHEJO
-                    // myPlayerId pass kar rahe hain taki user ko khudke phone pe notification aaye
-                    let receiverId = myPlayerId ? myPlayerId : "not_set";
-                    sendNotification(receiverId, aiReplyText);
+                    // ✅ JAISE HI AI KA ANSWER AAYE, AUTOMATIC JAVASCRIPT TRIGGER KAREGA 
+                    automaticTriggerNotification(targetAI, aiReplyText);
                 } else {
-                    alert("AI API Response Error. Please try again.");
+                    alert("AI API ne koi answer nahi diya.");
                 }
             })
             .catch(error => {
                 document.getElementById('ai-typing').style.display = "none";
                 document.getElementById('sendBtn').disabled = false;
-                alert("API Connectivity Issue: " + error.message);
+                alert("API Error: " + error.message);
             });
         }
 
-        // ORIGINAL NOTIFICATION FUNCTION (Jisme ab targetAI aayega)
-        function sendNotification(pId, msg) {
+        // 🌟 JAVASCRIPT AUTOMATIC TRIGGER SYSTEM (Only for AI Replies)
+        function automaticTriggerNotification(aiName, messageText) {
+            
+            // 1. KODULAR SYSTEM TRIGGER (Agar app Kodular me hai)
             if (window.AppInventor) {
-                // FORMAT: SEND_NOTIF:AIname|Message|PlayerID
-                let data = "SEND_NOTIF:" + targetAI + "|" + msg + "|" + pId;
+                let pId = myPlayerId ? myPlayerId : "not_set";
+                let data = "SEND_NOTIF:" + aiName + "|" + messageText + "|" + pId;
                 window.AppInventor.setWebViewString(data);
+            }
+
+            // 2. MOBILE VIBRATION TRIGGER (200 milliseconds vibrate hoga)
+            if (navigator.vibrate) {
+                navigator.vibrate(200); 
+            }
+
+            // 3. JAVASCRIPT BROWSER NOTIFICATION (Agar browser / chrome me hai)
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(aiName, {
+                    body: messageText,
+                    icon: getAvatar(aiName)
+                });
             }
         }
 
-        // LOAD MESSAGES
+        // LOAD MESSAGES IN CHAT UI
         function loadMessages() {
             let chatId =[currentUser, targetAI].sort().join("_");
             db.ref('chats/' + chatId).on('value', (snapshot) => {
