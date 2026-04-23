@@ -30,7 +30,7 @@
         body { background: var(--bg-color); color: var(--text-dark); height: 100vh; overflow: hidden; display: flex; justify-content: center; }
         .hidden { display: none !important; }
 
-        /* App Container for Desktop/Mobile view */
+        /* App Container */
         .app-container { width: 100%; max-width: 500px; height: 100vh; background: #fff; position: relative; box-shadow: 0 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
 
         /* Login Screen */
@@ -44,15 +44,13 @@
         .btn-primary { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         .btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
 
-        /* Headers */
+        /* Chat Header */
         .header { background: var(--primary); color: white; padding: 15px 20px; display: flex; align-items: center; font-size: 18px; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10; }
-        
-        /* Chat Room */
-        #chat-room { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
         .chat-header { padding: 10px 15px; }
         .chat-header .avatar { width: 35px; height: 35px; margin-right: 10px; border-radius: 50%; }
         
         /* Messages Area */
+        #chat-room { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
         #messages { flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; scroll-behavior: smooth; }
         .msg { padding: 8px 12px; margin-bottom: 10px; border-radius: 8px; max-width: 80%; position: relative; font-size: 15px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
         .sent { background: var(--msg-sent); align-self: flex-end; border-top-right-radius: 0; }
@@ -64,19 +62,21 @@
         .input-area input { flex: 1; padding: 12px 15px; border-radius: 20px; border: none; font-size: 15px; outline: none; }
         .send-btn { width: 45px; height: 45px; border-radius: 50%; background: var(--primary); color: white; border: none; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 18px; transition: 0.2s; }
         .send-btn:active { transform: scale(0.9); }
+        .send-btn:disabled { background: #999; cursor: not-allowed; }
+        
+        #ai-typing { font-size: 12px; color: #008069; margin-bottom: 5px; text-align: left; display: none; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        
         <!-- LOGIN SCREEN -->
         <div id="login-page">
             <i class="fa-solid fa-robot login-logo"></i>
             <h1>AI Chat Setup</h1>
             <p>Apna aur AI Assistant ka naam dalein</p>
             <div class="input-group">
-                <input type="text" id="username" placeholder="Apna Naam Likhein..." onkeypress="handleLoginEnter(event)">
+                <input type="text" id="username" placeholder="Apna Naam..." onkeypress="handleLoginEnter(event)">
             </div>
             <div class="input-group">
                 <input type="text" id="ainame" placeholder="AI Assistant Ka Naam..." onkeypress="handleLoginEnter(event)">
@@ -90,19 +90,21 @@
                 <img src="" id="chat-avatar" class="avatar" alt="Avatar">
                 <span id="chatting-with">AI Name</span>
             </div>
-            <div id="messages"></div>
+            <div id="messages">
+                <!-- Messages load here -->
+            </div>
+            <div id="ai-typing">AI is typing...</div>
             <div class="input-area">
                 <input type="text" id="msgInput" placeholder="Message AI..." onkeypress="handleEnter(event)">
-                <button class="send-btn" onclick="sendMessage()">
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </div>
         </div>
-
     </div>
 
     <script>
-        // --- CONFIGURATION ---
+        // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyAdZb8GbRCLr0a-eQSl1QEQ8SuOmKQf1So",
             authDomain: "iid-2026.firebaseapp.com",
@@ -129,9 +131,6 @@
                 let val = window.AppInventor.getWebViewString();
                 if (val && val.includes("player_id:")) {
                     myPlayerId = val.split(":")[1];
-                    if(currentUser) {
-                        db.ref('users/' + currentUser).update({ onesignal_id: myPlayerId });
-                    }
                 }
             }
         }, 3000);
@@ -145,118 +144,114 @@
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
-        function handleLoginEnter(e) {
-            if(e.key === 'Enter') login();
-        }
+        function handleLoginEnter(e) { if(e.key === 'Enter') login(); }
+        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
 
-        function handleEnter(e) {
-            if(e.key === 'Enter') sendMessage();
-        }
-
-        // LOGIN FUNCTION
+        // LOGIN
         function login() {
             currentUser = document.getElementById('username').value.trim();
             targetAI = document.getElementById('ainame').value.trim();
             
-            if (!currentUser || !targetAI) return alert("Kripya dono (Apna aur AI ka) naam daalein!");
+            if (!currentUser || !targetAI) return alert("Dono naam daalna zaroori hai!");
             
-            db.ref('users/' + currentUser).update({
-                name: currentUser,
-                lastSeen: Date.now(),
-                onesignal_id: myPlayerId || "not_set"
-            });
-
             document.getElementById('login-page').classList.add('hidden');
-            startAIChat();
-        }
-
-        // START AI CHAT DIRECTLY
-        function startAIChat() {
+            
+            // Set Header
             document.getElementById('chatting-with').innerText = targetAI;
             document.getElementById('chat-avatar').src = getAvatar(targetAI);
             document.getElementById('chat-room').classList.remove('hidden');
+            
             loadMessages();
         }
 
-        // MESSAGE BHEJNA (User)
+        // SEND MESSAGE TO FIREBASE
         function sendMessage() {
             let msgInput = document.getElementById('msgInput');
             let text = msgInput.value.trim();
             if (!text) return;
 
             let chatId = [currentUser, targetAI].sort().join("_");
-            let timestamp = Date.now();
-
-            // Sirf user ka message Firebase me save kar rahe hain.
-            // Yahan se Notification HATA diya gaya hai, user message par notification nahi aayega.
+            
+            // User ka message Firebase me bhejna (yahan NOTIFICATION NAHI HAI)
             db.ref('chats/' + chatId).push({
                 sender: currentUser,
                 text: text,
-                time: timestamp
+                time: Date.now()
             });
 
             msgInput.value = "";
-            msgInput.focus();
+            document.getElementById('ai-typing').style.display = "block";
+            document.getElementById('sendBtn').disabled = true;
 
-            // AI Se Reply Mangwana
+            // AI API Call
             fetchAIResponse(text, chatId);
         }
 
-        // AI SE REPLY LENA (OpenRouter)
-        async function fetchAIResponse(userMessage, chatId) {
-            // AI ko strict instruction di gayi hai ki 200 words ke andar reply de
-            const systemPrompt = `Your name is ${targetAI}. You are a helpful AI assistant. You are chatting with a user named ${currentUser}. ALWAYS keep your responses strictly under 200 words.`;
+        // FETCH AI RESPONSE (Kodular Webview Friendly Format)
+        function fetchAIResponse(userMessage, chatId) {
+            const systemPrompt = "Your name is " + targetAI + ". You are chatting with " + currentUser + ". Keep your response STRICTLY under 200 words.";
+            
+            // Using mistral free model which is highly stable on OpenRouter
+            let apiData = {
+                model: "mistralai/mistral-7b-instruct:free",
+                messages:[
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userMessage }
+                ]
+            };
 
-            try {
-                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        model: "meta-llama/llama-3.1-8b-instruct:free", // Free aur fast model 
-                        messages:[
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: userMessage }
-                        ]
-                    })
-                });
+            fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer " + OPENROUTER_API_KEY,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://myapp.com", // Zaroori hai WebView ke liye
+                    "X-Title": "Kodular Chat App"
+                },
+                body: JSON.stringify(apiData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('ai-typing').style.display = "none";
+                document.getElementById('sendBtn').disabled = false;
 
-                const data = await response.json();
-                
-                if (data.choices && data.choices.length > 0) {
+                if (data && data.choices && data.choices.length > 0) {
                     let aiReplyText = data.choices[0].message.content;
 
-                    // AI ka reply Firebase me save karna
+                    // Save AI Message to Firebase
                     db.ref('chats/' + chatId).push({
                         sender: targetAI,
                         text: aiReplyText,
                         time: Date.now()
                     });
 
-                    // AI NE REPLY DIYA - AB NOTIFICATION BHEJO
-                    // Sender Name me targetAI (AI ka naam) pass kar rahe hain.
-                    sendNotification(targetAI, aiReplyText, myPlayerId);
+                    // AI KA MESSAGE AAYA -> AB NOTIFICATION BHEJO
+                    // myPlayerId pass kar rahe hain taki user ko khudke phone pe notification aaye
+                    let receiverId = myPlayerId ? myPlayerId : "not_set";
+                    sendNotification(receiverId, aiReplyText);
+                } else {
+                    alert("AI API Response Error. Please try again.");
                 }
-            } catch (error) {
-                console.error("AI Error: ", error);
-            }
+            })
+            .catch(error => {
+                document.getElementById('ai-typing').style.display = "none";
+                document.getElementById('sendBtn').disabled = false;
+                alert("API Connectivity Issue: " + error.message);
+            });
         }
 
-        // ONE SIGNAL NOTIFICATION (Kodular Connection)
-        // Modifed: Isme ab Sender ka naam pass kiya jaa raha hai (Jo ki AI ka naam hoga)
-        function sendNotification(senderName, msg, pId) {
+        // ORIGINAL NOTIFICATION FUNCTION (Jisme ab targetAI aayega)
+        function sendNotification(pId, msg) {
             if (window.AppInventor) {
-                // Format: SEND_NOTIF:AINaam|Message|PlayerID
-                let data = "SEND_NOTIF:" + senderName + "|" + msg + "|" + (pId || "not_set");
+                // FORMAT: SEND_NOTIF:AIname|Message|PlayerID
+                let data = "SEND_NOTIF:" + targetAI + "|" + msg + "|" + pId;
                 window.AppInventor.setWebViewString(data);
             }
         }
 
-        // MESSAGES LOAD KARNA
+        // LOAD MESSAGES
         function loadMessages() {
-            let chatId = [currentUser, targetAI].sort().join("_");
+            let chatId =[currentUser, targetAI].sort().join("_");
             db.ref('chats/' + chatId).on('value', (snapshot) => {
                 let msgs = snapshot.val();
                 let html = "";
@@ -274,7 +269,7 @@
                 let container = document.getElementById('messages');
                 container.innerHTML = html;
                 
-                // Smooth scroll to bottom
+                // Auto Scroll to bottom
                 setTimeout(() => {
                     container.scrollTop = container.scrollHeight;
                 }, 100);
