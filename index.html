@@ -137,9 +137,20 @@
         const db = firebase.database();
 
         // --- AI CONFIGURATION ---
-        const AI_ID = "AI_BOT"; // Internal ID fix rahega, taki chat history delete na ho jab bhi naam change ho.
-        let currentAIName = localStorage.getItem('customAIName') || "My AI Assistant"; // User ka set kiya hua AI naam
-        const aiApiKey = "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";
+        const AI_ID = "AI_BOT"; // Internal ID fix rahega
+        let currentAIName = localStorage.getItem('customAIName') || "My AI Assistant"; 
+        let aiApiKey = ""; // API Key Firebase se aayegi
+
+        // FIREBASE SE AI API KEY FETCH KARNA (REAL-TIME)
+        db.ref('config/aiApiKey').on('value', (snapshot) => {
+            if (snapshot.exists()) {
+                aiApiKey = snapshot.val();
+            } else {
+                // Agar database me API key nahi hai, toh automatic save kar dega pehli baar me
+                aiApiKey = "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";
+                db.ref('config/aiApiKey').set(aiApiKey);
+            }
+        });
 
         let currentUser = "";
         let targetUser = "";
@@ -211,7 +222,7 @@
             loadUsers();
         }
 
-        // LOAD USERS (Modified for AI Renaming)
+        // LOAD USERS
         function loadUsers() {
             db.ref('users').on('value', (snapshot) => {
                 const users = snapshot.val();
@@ -267,7 +278,7 @@
             let text = msgInput.value.trim();
             if (!text) return;
 
-            let chatId = [currentUser, targetUser].sort().join("_");
+            let chatId =[currentUser, targetUser].sort().join("_");
             let timestamp = Date.now();
 
             db.ref('chats/' + chatId).push({
@@ -299,11 +310,16 @@
 
         // AI BOT API CALL & NOTIFICATION SYSTEM
         async function fetchAIResponse(userMessage, chatId) {
+            if (!aiApiKey) {
+                console.error("AI API Key is missing from Firebase.");
+                return;
+            }
+
             try {
                 const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
                     headers: {
-                        "Authorization": `Bearer ${aiApiKey}`,
+                        "Authorization": `Bearer ${aiApiKey}`, // Using Firebase API Key
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
